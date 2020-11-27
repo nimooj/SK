@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="EgObject" Collapsed="true">
+    <Position X="2.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgVertex" Collapsed="true">
+    <Position X="0.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAJBAAAAAAAAAAQABEAAKAKABBAAAiAEAI=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgTexel" Collapsed="true">
+    <Position X="9.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAABAAAAAgAAAAAAAAAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgNormal" Collapsed="true">
+    <Position X="7.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAEAAAEA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgEdge" Collapsed="true">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAFAIAAAAEAAAgoAABAAACQAgAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgFace" Collapsed="true">
+    <Position X="2.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAEQAAQAAABAQEAAAAkAAAMIAAgAABTAECAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgTexture" Collapsed="true">
+    <Position X="11" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAACAAAAAAAAAAEAAAAAAAAAAAAAAEAAAAAACA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgMaterial" Collapsed="true">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAwAAAAAJAAAAEAACCABAAAAAACAAAAkBIAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgBox" Collapsed="true">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIEIAAAAEAiAAAAAAAAABAAAAAAAAAgBAgAEQABAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EgMesh">
+    <Position X="5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QgDYEOgCABPAbCAgUEwAQskkBqv6lCGCCASIBEgoGSQ=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="TypeShade" Collapsed="true">
+    <Position X="7.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQBAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>C:\Users\SHYUN\Desktop\EgMeshLib-04-21\usr\include\EgMesh\egmesh.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="맑은 고딕" Size="9" />
+</ClassDiagram>

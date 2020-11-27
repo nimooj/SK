@@ -1,0 +1,291 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\GSizer">
+      <UniqueIdentifier>{67b175f7-43c3-4fc6-b147-295006943cdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GSizer">
+      <UniqueIdentifier>{1327d8e2-182b-40e0-b689-29e6f4c1f7eb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SizeKorea-2020.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea-2020Doc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea-2020View.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvexHull.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="DBRecord.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="GFONT.H">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="grefplane.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="LOADFILE.H">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJdll.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="OPTIMIZE.H">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="Point3f.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="TYPEDEF.H">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="UTIL.H">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="measurepose2.h">
+      <Filter>Header Files\GSizer</Filter>
+    </ClInclude>
+    <ClInclude Include="CSelectPoseDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pose1Landmarks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKoreaUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EgSizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea_Pose1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pose1Measures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose3InfoDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose4InfoDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose1InfoDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose2InfoDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea_Pose3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea_Pose4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose3ResultDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose4ResultDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose1ResultDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pose2Landmarks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pose2Measures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose2ResultDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EgConvexhull.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CEditModelDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPose5InfoDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea_Pose5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeKorea_Pose2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CProgressDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SizeKorea-2020.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea-2020Doc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea-2020View.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UTIL.CPP">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="Point3f.cpp">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="LOADFILE.CPP">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="grefplane.cpp">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="GFONT.CPP">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="DBRecord.cpp">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvexHull.cpp">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="measurepose2.cpp">
+      <Filter>Source Files\GSizer</Filter>
+    </ClCompile>
+    <ClCompile Include="CSelectPoseDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKoreaUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EgSizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea_Pose1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose3InfoDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose4InfoDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose1InfoDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose2InfoDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea_Pose3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea_Pose4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose3ResultDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose4ResultDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose1ResultDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose2ResultDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EgConvexhull.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CEditModelDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPose5InfoDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeKorea_Pose5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CProgressDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SizeKorea2020.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\userimages.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\SizeKorea-2020Doc.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\SizeKorea-2020.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Toolbar.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Toolbar256.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\toolbar1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\SizeKorea2020.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\cursor1.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
