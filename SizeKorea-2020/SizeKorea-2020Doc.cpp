@@ -173,6 +173,17 @@ CSizeKorea2020Doc::~CSizeKorea2020Doc()
 
 	if (m_FaceIdx != NULL)
 		delete[] m_FaceIdx;
+
+	if (m_pAlignedPointsV_X)
+	{
+		delete[] m_pAlignedPointsV_X;
+		m_pAlignedPointsV_X = NULL; // linked list that store points according to width.
+	}
+	if (m_pAlignedPointsV_Y)
+	{
+		delete[] m_pAlignedPointsV_Y;
+		m_pAlignedPointsV_Y = NULL; // linked list that store points according to height.
+	}
 }
 
 BOOL CSizeKorea2020Doc::OnNewDocument()
@@ -2619,76 +2630,6 @@ int CSizeKorea2020Doc::GetNumberOfSizes() {
 //		size = 0;
 //}
 
-void CSizeKorea2020Doc::InputMesh(int nNode, float* ppNodes, int nElement, int* ppElements) {
-	if (m_bOpened) {
-		if (m_bSizeResult)  InitVariable_Landmark();
-		else InitVariable();
-	}
-
-	m_Vertex = new GVector3f[nNode];   	//*m_Color = new GVector3f[vnum];
-	m_FaceIdx = new int[nElement];
-
-	m_vNum = nNode;
-	m_iNum = nElement;
-
-	float min_y = 10000.0, max_y = -10000.0;
-	float min_x = 10000.0, max_x = -10000.0;
-	float min_z = 10000.0, max_z = -10000.0;
-
-	for (int k = 0; k < nNode; k++)
-	{
-		m_Vertex[k][0] = ppNodes[k * 3];  //ppNodes++
-		m_Vertex[k][1] = ppNodes[k * 3 + 1];
-		m_Vertex[k][2] = ppNodes[k * 3 + 2];
-
-
-		min_x = MIN(min_x, m_Vertex[k][0]);
-		max_x = MAX(max_x, m_Vertex[k][0]);
-
-		min_y = MIN(min_y, m_Vertex[k][1]);
-		max_y = MAX(max_y, m_Vertex[k][1]);
-
-		min_z = MIN(min_z, m_Vertex[k][2]);
-		max_z = MAX(max_z, m_Vertex[k][2]);
-	}
-
-	for (int j = 0; j < nElement; j++)
-	{
-		m_FaceIdx[j] = *ppElements++;
-	}
-
-	m_bOpened = true;
-	m_MaxY = max_y;
-	m_MinY = min_y;
-	m_MaxX = max_x;
-	m_MinX = min_x;
-	m_MaxZ = max_z;
-	m_MinZ = min_z;
-	m_MaxYOrigin = max_y;
-	m_MinYOrigin = min_y;
-	m_MaxXOrigin = max_x;
-	m_MinXOrigin = min_x;
-	m_MaxZOrigin = max_z;
-	m_MinZOrigin = min_z;
-
-	// 환경변수들을 default로
-	RefAngle[0] = 20.0f;      //목둘레
-	RefAngle[1] = 1.48353f;   //팔 몸통분리 오른 85.0f,
-	RefAngle[2] = -1.48353f;   //팔 몸통분리 왼  85.0f,
-	RefAngle[3] = 1.48353f;
-	RefAngle[4] = -1.48353f;
-	RefAngle[5] = 1.48353f;
-	RefAngle[6] = -1.48353f;
-
-	m_bOpened = true;
-
-	if ((m_MaxX - m_MinX) < (m_MaxZ - m_MinZ)) {
-		m_Error = ASERR_WRONGDATA;
-	}
-	else {
-		OnArrange3DData();
-	}
-}
 
 void CSizeKorea2020Doc::MeasureBody() {
 	if (m_bOpened) {
@@ -11628,20 +11569,25 @@ void CSizeKorea2020Doc::Arrange3DDataXYZ_to0()
 	m_nCount_X = ROUND((m_MaxX - m_MinX)) + 1;	
 }
 
-void CSizeKorea2020Doc::Arrange3DDataXY_V() {
-	if (!m_bOpened) return;
+void CSizeKorea2020Doc::Arrange3DDataXY_V() 
+{
+	if (!m_bOpened)
+		return;
 
 	m_nCount_X = ROUND((m_MaxX - m_MinX)) + 1;
+	if (m_pAlignedPointsV_X != NULL)
+		delete[] m_pAlignedPointsV_X;
 	m_pAlignedPointsV_X = new GObList<GVector3f>[m_nCount_X];
 
 	m_Height = m_MaxY - m_MinY;
 	int countY = ROUND(m_Height);
 	if (countY % 2 == 1) countY++;
 	m_nCount_Y = countY + 2;
+	if (m_pAlignedPointsV_Y != NULL)
+		delete[] m_pAlignedPointsV_Y;
 	m_pAlignedPointsV_Y = new GObList<GVector3f>[m_nCount_Y];
 
 	//double minx, maxx, miny, maxy;
-
 	for (int k = 0; k < m_iNum; k += 3)
 	{
 		GVector3f v0, v1, v2;
@@ -12039,6 +11985,14 @@ void CSizeKorea2020Doc::EgMesh2RawData()
 	m_iNum = m_ScanMesh->m_pFaces.size() * 3;
 
 	// 모델의 정점, 칼라, 법선, 인덱스 배열을 동적으로 할당한다.
+	if (m_Vertex != NULL)
+		delete[] m_Vertex;
+	if (m_Color != NULL)
+		delete[] m_Color;
+	if (m_Normal != NULL)
+		delete[] m_Normal;
+	if (m_FaceIdx != NULL)
+		delete[] m_FaceIdx;
 	m_Vertex = new GVector3f[m_vNum];
 	m_Color = new GVector3f[m_vNum];
 	m_Normal = new GVector3f[m_vNum];
@@ -12081,49 +12035,6 @@ void CSizeKorea2020Doc::EgMesh2RawData()
 	m_Depth = m_MaxZ - m_MinZ;
 }
 
-// mj::멤버 변수들을 이용해 EgMesh에 할당한다
-bool CSizeKorea2020Doc::Copy2EgMesh() {
-	_cprintf("Copying to m_ScanMesh...\n");
-
-	// Build up m_ScanMesh
-	m_ScanMesh = new EgMesh((LPCTSTR)m_FileName);
-
-	_cprintf("Copying to %d vertices... ", m_vNum);
-	for (int i = 0; i < m_vNum; i++)
-	{
-		m_ScanMesh->AddVertex(new EgVertex(m_Vertex[i].X, m_Vertex[i].Y, m_Vertex[i].Z));
-		m_ScanMesh->AddNormal(new EgNormal(m_Normal[i].X, m_Normal[i].Y, m_Normal[i].Z));
-	}
-	_cprintf("Final vert num : %d\n", m_ScanMesh->m_pVerts.size());
-
-
-	_cprintf("Copying to %d faces... \n", m_iNum / 3);
-	for (int i = 0; i < m_iNum; i += 3) {
-
-		EgVertex *V[3] = { 0 };
-		V[0] = m_ScanMesh->m_pVerts[m_FaceIdx[i]];
-		V[1] = m_ScanMesh->m_pVerts[m_FaceIdx[i + 1]];
-		V[2] = m_ScanMesh->m_pVerts[m_FaceIdx[i + 2]];
-
-		EgTexel *T[3] = { 0 };
-		EgNormal *N[3] = { 0 };
-
-		std::string grp;
-		EgFace *f = new EgFace(V[0], V[1], V[2], T[0], T[1], T[2], N[0], N[1], N[2], NULL, grp);
-		m_ScanMesh->AddFace(f);
-	}
-	_cprintf("Final face num : %d\n", m_ScanMesh->m_pFaces.size());
-
-	_cprintf("Setting up bounding box...\n");
-	m_ScanMesh->m_BndBox = EgBox(m_MinX, m_MinY, m_MinZ, m_MaxX, m_MaxY, m_MaxZ);
-
-
-	// 하프에지 자료구조를 초기화 해야 함.
-	m_ScanMesh->InitEdgeMate();
-
-	_cprintf("End copying m_ScanMesh");
-	return true;
-}
 
 void CSizeKorea2020Doc::InitPoseInfoDialog()
 {
