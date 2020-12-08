@@ -12,6 +12,7 @@ extern float m_MinZ, m_MaxZ;
 EgVertex* m_LandmarkPose1[LANDMARK_NUM_POSE1];
 EgVertex* m_LandmarkHelpPose1[LANDMARK_HELP_NUM_POSE1];
 
+
 std::vector<EgVertex*> m_SagittalPoints_Front, m_SagittalPoints_Back;
 std::vector<EgVertex*> m_CoronalPoints_Right, m_CoronalPoints_Left;
 
@@ -24,6 +25,11 @@ void printVert(EgVertex *v);
 bool sortPosByY(EgPos a, EgPos b);
 bool sortPointByY(EgVertex* a, EgVertex* b);
 bool sortPointByZ(EgVertex* a, EgVertex* b);
+
+
+// mj :: 자세1, 자세2 수동 측정점 참조 여부 변수 (20. 12. 8)
+extern std::vector<bool> m_bFindLandmark;
+
 
 CSizeKorea2020View* GetView() 
 {
@@ -155,11 +161,9 @@ std::vector<std::string> ResultPose1 = {
 	"왼쪽어깨경사각"
 };
 
-
 void printPos(EgPos pos) {
 	_cprintf("%f %f %f\n", pos.m_Coords[0], pos.m_Coords[1], pos.m_Coords[2]);
 }
-
 
 void printVert(EgVertex *v) {
 	_cprintf("%f %f %f\n", v->m_Pos[0], v->m_Pos[1], v->m_Pos[2]);
@@ -180,9 +184,14 @@ bool sortPointByZ(EgVertex* a, EgVertex* b) {
 }
 
 
+/********************************************************************************************************************/
+
 ///////////////////////////////////////  측정점::머리마루점 
 // 마지막 수정일 : 2020. 7. 11
 void Pose1_FindTopHeadPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_TOPHEAD])
+		return;
+
 	EgVertex *TopHeadPt = NULL;
 
 	EgPos maxY(0, -INFINITY, 0);
@@ -298,11 +307,19 @@ void Pose1_MakeSilhouette(EgMesh *pMesh) {
 
 /////////////////////////////////////// 측정점::겨드랑앞접힘점(R/L)
 /////////////////////////////////////// 측정점::겨드랑뒤접힘점(R/L)
-/////////////////////////////////////// 측정점::겨드랑점 (R/L)
+/////////////////////////////////////// 측정점::겨드랑점 (R)
+/////////////////////////////////////// 보조점::겨드랑점 (L)
 /////////////////////////////////////// 보조점::겨드랑앞점 (R/L)
 /////////////////////////////////////// 보조점::겨드랑뒤점 (R/L)
 // 마지막 수정일 : 2020. 10. 27
 void Pose1_FindArmpitPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_ARMPIT]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_L]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_L])
+		return;
+
 	EgVertex *TopHeadPt = m_LandmarkPose1[POSE1_LANDMARK_TOPHEAD];
 
 	if (TopHeadPt == NULL) {
@@ -404,139 +421,155 @@ void Pose1_FindArmpitPt(EgMesh *pMesh) {
 		lower -= 0.03;
 	}
 
-	_cprintf("front R : %d, front L : %d, back R : %d, back L : %d\n", front_R.size(), front_L.size(), back_R.size(), back_L.size());
-
 
 	//////// 겨드랑앞접힘점(R)
-	if (!front_R.empty()) {
-		// 후보들의 높이 중앙 수준 선택
-		std::sort(front_R.begin(), front_R.end(), sortPosByY);
-		EgPos first = front_R[0];
-		EgPos last = front_R[front_R.size() - 1];
-		
-		ArmpitRPt = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0])/2, (first.m_Coords[1] + last.m_Coords[1])/2, (first.m_Coords[2] + last.m_Coords[2])/2));
-		ArmpitRPt = SK_Hyperbolic_Vertex(ArmpitRPt, 30);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]) {
+		if (!front_R.empty()) {
+			// 후보들의 높이 중앙 수준 선택
+			std::sort(front_R.begin(), front_R.end(), sortPosByY);
+			EgPos first = front_R[0];
+			EgPos last = front_R[front_R.size() - 1];
 
-		// 겨드랑앞접힘점(R)
-		ArmpitFoldR = FindClosestVert(pMesh, EgPos(ArmpitRPt->m_Pos[0], ArmpitRPt->m_Pos[1] + 15, ArmpitRPt->m_Pos[2]));
-		if (ArmpitFoldR->m_Pos[1] < ArmpitRPt->m_Pos[1])
-			ArmpitFoldR->m_Pos[1] = ArmpitRPt->m_Pos[1] + 15;
-		if (ArmpitFoldR != NULL) {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = ArmpitFoldR;
+			ArmpitRPt = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0]) / 2, (first.m_Coords[1] + last.m_Coords[1]) / 2, (first.m_Coords[2] + last.m_Coords[2]) / 2));
+			ArmpitRPt = SK_Hyperbolic_Vertex(ArmpitRPt, 30);
+
+			// 겨드랑앞접힘점(R)
+			ArmpitFoldR = FindClosestVert(pMesh, EgPos(ArmpitRPt->m_Pos[0], ArmpitRPt->m_Pos[1] + 15, ArmpitRPt->m_Pos[2]));
+			if (ArmpitFoldR->m_Pos[1] < ArmpitRPt->m_Pos[1])
+				ArmpitFoldR->m_Pos[1] = ArmpitRPt->m_Pos[1] + 15;
+			if (ArmpitFoldR != NULL) {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = ArmpitFoldR;
+				_cprintf("Armpit Fold Pt Front (R) : ");
+				printVert(ArmpitFoldR);
+			}
+			else {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = NULL;
+				_cprintf("Armpit Fold Pt Front (R) : NOT FOUND!\n");
+
+			}
+		}
+		else {
+			_cprintf("Armpit Fold Pt Front (R) : Not Found ! Replacing... ");
+			EgPos minX = EgPos(INFINITY, 0, 0);
+			for (EgPos pos : SortedPts) {
+				if (pos.m_Coords[0] < minX.m_Coords[0] && pos.m_Coords[2] && pos.m_Coords[2] > (m_MinZ + m_MaxZ) / 2) {
+					minX = pos;
+				}
+			}
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = FindClosestVert(pMesh, minX);
 			_cprintf("Armpit Fold Pt Front (R) : ");
 			printVert(ArmpitFoldR);
 		}
-		else {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = NULL;
-			_cprintf("Armpit Fold Pt Front (R) : NOT FOUND!\n");
 
-		}
 	}
+	// 업데이트된 겨드랑앞접힘점(R)을 사용할 경우, ArmpitRPt와 ArmpitFoldR을 따로 업데이트 해준다 (20. 12. 8)
 	else {
-		_cprintf("Armpit Fold Pt Front (R) : Not Found ! Replacing... ");
-		EgPos minX = EgPos(INFINITY, 0, 0);
-		for (EgPos pos : SortedPts) {
-			if (pos.m_Coords[0] < minX.m_Coords[0] && pos.m_Coords[2] && pos.m_Coords[2] > (m_MinZ + m_MaxZ) / 2) {
-				minX = pos;
-			}
-		}
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = FindClosestVert(pMesh, minX);
-		_cprintf("Armpit Fold Pt Front (R) : ");
-		printVert(ArmpitFoldR);
-	}
+		ArmpitFoldR = m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R];
 
+		// 어짜피 뒤에서 새롭게 allocate해주므로 여기선 ArmpitFoldR을 가리키게 한다 (20. 12. 8)
+		ArmpitRPt = ArmpitFoldR;
+	}
 
 	//////// 겨드랑앞접힘점(L)
-	if (!front_L.empty()) {
-		// 후보들의 높이 중앙 수준 선택
-		std::sort(front_L.begin(), front_L.end(), sortPosByY);
-		EgPos first = front_L[0];
-		EgPos last = front_L[front_L.size() - 1];
-		
-		ArmpitLPt = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0])/2, (first.m_Coords[1] + last.m_Coords[1])/2, (first.m_Coords[2] + last.m_Coords[2])/2));
-		ArmpitLPt = SK_Hyperbolic_Vertex(ArmpitLPt, 30);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_L]) {
+		if (!front_L.empty()) {
+			// 후보들의 높이 중앙 수준 선택
+			std::sort(front_L.begin(), front_L.end(), sortPosByY);
+			EgPos first = front_L[0];
+			EgPos last = front_L[front_L.size() - 1];
 
-		// 겨드랑앞접힘점(L)
-		ArmpitFoldL = FindClosestVert(pMesh, EgPos(ArmpitLPt->m_Pos[0], ArmpitLPt->m_Pos[1] + 15, ArmpitLPt->m_Pos[2]));
+			ArmpitLPt = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0]) / 2, (first.m_Coords[1] + last.m_Coords[1]) / 2, (first.m_Coords[2] + last.m_Coords[2]) / 2));
+			ArmpitLPt = SK_Hyperbolic_Vertex(ArmpitLPt, 30);
 
-		if (ArmpitFoldL != NULL) {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = ArmpitFoldL;
+			// 겨드랑앞접힘점(L)
+			ArmpitFoldL = FindClosestVert(pMesh, EgPos(ArmpitLPt->m_Pos[0], ArmpitLPt->m_Pos[1] + 15, ArmpitLPt->m_Pos[2]));
+
+			if (ArmpitFoldL != NULL) {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = ArmpitFoldL;
+				_cprintf("Armpit Fold Pt Front (L) : ");
+				printVert(ArmpitFoldL);
+			}
+			else {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = NULL;
+				_cprintf("Armpit Fold Pt Front (L) : NOT FOUND!\n");
+			}
+		}
+		else {
+			_cprintf("Armpit Fold Pt Front (L) : Not Found ! Replacing... ");
+
+			EgPos maxX = EgPos(-INFINITY, 0, 0);
+			for (EgPos pos : SortedPts) {
+				if (pos.m_Coords[0] > maxX.m_Coords[0] && pos.m_Coords[2] && pos.m_Coords[2] > (m_MinZ + m_MaxZ) / 2) {
+					maxX = pos;
+				}
+			}
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = FindClosestVert(pMesh, maxX);
 			_cprintf("Armpit Fold Pt Front (L) : ");
 			printVert(ArmpitFoldL);
 		}
-		else {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = NULL;
-			_cprintf("Armpit Fold Pt Front (L) : NOT FOUND!\n");
-		}
 	}
+	// 업데이트된 겨드랑앞접힘점(L)을 사용할 경우, ArmpitLPt와 ArmpitFoldL을 따로 업데이트 해준다 (20. 12. 8)
 	else {
-		_cprintf("Armpit Fold Pt Front (L) : Not Found ! Replacing... ");
-
-		EgPos maxX = EgPos(-INFINITY, 0, 0);
-		for (EgPos pos : SortedPts) {
-			if (pos.m_Coords[0] > maxX.m_Coords[0] && pos.m_Coords[2] && pos.m_Coords[2] > (m_MinZ + m_MaxZ) / 2) {
-				maxX = pos;
-			}
-		}
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = FindClosestVert(pMesh, maxX);
-		_cprintf("Armpit Fold Pt Front (L) : ");
-		printVert(ArmpitFoldL);
+		ArmpitFoldL = m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L];
+		// 어짜피 뒤에서 새롭게 allocate해주므로 여기선 ArmpitFoldL을 가리키게 한다 (20. 12. 8)
+		ArmpitLPt = ArmpitFoldL;
 	}
-
 
 	//////// 겨드랑뒤접힘점(R)
-	if (!back_R.empty()) {
-		std::sort(back_R.begin(), back_R.end(), sortPosByY);
-		EgPos first = back_R[0];
-		EgPos last = back_R[back_R.size() - 1];
-		
-		ArmpitBackFoldR = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0])/2, (first.m_Coords[1] + last.m_Coords[1])/2, (first.m_Coords[2] + last.m_Coords[2])/2));
-		ArmpitBackFoldR = SK_Hyperbolic_Vertex(ArmpitBackFoldR, 50);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_R]) {
+		if (!back_R.empty()) {
+			std::sort(back_R.begin(), back_R.end(), sortPosByY);
+			EgPos first = back_R[0];
+			EgPos last = back_R[back_R.size() - 1];
 
-		if (ArmpitBackFoldR->m_Pos[1] < ArmpitRPt->m_Pos[1])
-			ArmpitBackFoldR = FindClosestVert(pMesh, EgPos(ArmpitBackFoldR->m_Pos[0], ArmpitRPt->m_Pos[1] + 20, ArmpitBackFoldR->m_Pos[2]));
-		if (ArmpitBackFoldR != NULL) {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = ArmpitBackFoldR;
-			_cprintf("Armpit Fold Pt Back (R) : ");
-			printVert(ArmpitBackFoldR);
+			ArmpitBackFoldR = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0]) / 2, (first.m_Coords[1] + last.m_Coords[1]) / 2, (first.m_Coords[2] + last.m_Coords[2]) / 2));
+			ArmpitBackFoldR = SK_Hyperbolic_Vertex(ArmpitBackFoldR, 50);
+
+			if (ArmpitBackFoldR->m_Pos[1] < ArmpitRPt->m_Pos[1])
+				ArmpitBackFoldR = FindClosestVert(pMesh, EgPos(ArmpitBackFoldR->m_Pos[0], ArmpitRPt->m_Pos[1] + 20, ArmpitBackFoldR->m_Pos[2]));
+			if (ArmpitBackFoldR != NULL) {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = ArmpitBackFoldR;
+				_cprintf("Armpit Fold Pt Back (R) : ");
+				printVert(ArmpitBackFoldR);
+			}
+			else {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = NULL;
+				_cprintf("Armpit Fold Pt Back (R) : NOT FOUND!\n");
+			}
 		}
 		else {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = NULL;
-			_cprintf("Armpit Fold Pt Back (R) : NOT FOUND!\n");
+			_cprintf("Armpit Fold Pt Back (R) : Not Found!\n");
 		}
 	}
-	else {
-		_cprintf("Armpit Fold Pt Back (R) : Not Found!\n");
-	}
-
 
 	//////// 겨드랑뒤접힘점(L)
-	if (!back_L.empty()) {
-		std::sort(back_L.begin(), back_L.end(), sortPosByY);
-		EgPos first = back_L[0];
-		EgPos last = back_L[back_L.size() - 1];
-		
-		ArmpitBackFoldL = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0])/2, (first.m_Coords[1] + last.m_Coords[1])/2, (first.m_Coords[2] + last.m_Coords[2])/2));
-		ArmpitBackFoldL = SK_Hyperbolic_Vertex(ArmpitBackFoldL, 50);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_L]) {
+		if (!back_L.empty()) {
+			std::sort(back_L.begin(), back_L.end(), sortPosByY);
+			EgPos first = back_L[0];
+			EgPos last = back_L[back_L.size() - 1];
 
-		if (ArmpitBackFoldL->m_Pos[1] < ArmpitLPt->m_Pos[1])
-			ArmpitBackFoldL = FindClosestVert(pMesh, EgPos(ArmpitBackFoldL->m_Pos[0], ArmpitLPt->m_Pos[1] + 20, ArmpitBackFoldL->m_Pos[2]));
+			ArmpitBackFoldL = FindClosestVert(pMesh, EgPos((first.m_Coords[0] + last.m_Coords[0]) / 2, (first.m_Coords[1] + last.m_Coords[1]) / 2, (first.m_Coords[2] + last.m_Coords[2]) / 2));
+			ArmpitBackFoldL = SK_Hyperbolic_Vertex(ArmpitBackFoldL, 50);
 
-		if (ArmpitBackFoldL != NULL) {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = ArmpitBackFoldL;
-			_cprintf("Armpit Fold Pt Back (L) : ");
-			printVert(ArmpitBackFoldL);
+			if (ArmpitBackFoldL->m_Pos[1] < ArmpitLPt->m_Pos[1])
+				ArmpitBackFoldL = FindClosestVert(pMesh, EgPos(ArmpitBackFoldL->m_Pos[0], ArmpitLPt->m_Pos[1] + 20, ArmpitBackFoldL->m_Pos[2]));
+
+			if (ArmpitBackFoldL != NULL) {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = ArmpitBackFoldL;
+				_cprintf("Armpit Fold Pt Back (L) : ");
+				printVert(ArmpitBackFoldL);
+			}
+			else {
+				m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = NULL;
+				_cprintf("Armpit Fold Pt Back (L) : NOT FOUND!\n");
+
+			}
 		}
 		else {
-			m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = NULL;
-			_cprintf("Armpit Fold Pt Back (L) : NOT FOUND!\n");
-
+			_cprintf("Armpit Fold Pt Back (L) : Not Found!\n");
 		}
 	}
-	else {
-		_cprintf("Armpit Fold Pt Back (L) : Not Found!\n");
-	}
-
 
 	/////////////////////////////////////////////////////// 겨드랑앞뒤점(R/L)
 
@@ -630,18 +663,20 @@ void Pose1_FindArmpitPt(EgMesh *pMesh) {
 
 	//////// 겨드랑점(R)
 	// 겨드랑점의 z값은 앞뒤접힘점의 중앙
-	if (ArmpitFoldR != NULL && ArmpitBackFoldR != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = new EgVertex(
-			ArmpitRPt->m_Pos[0],
-			ArmpitRPt->m_Pos[1],
-			(m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]->m_Pos[2] + m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R]->m_Pos[2]) / 2
-		);
-		_cprintf("Armpit Pt (R) : ");
-		printVert(m_LandmarkPose1[POSE1_LANDMARK_ARMPIT]);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = NULL;
-		_cprintf("Armpit Pt (R) : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPIT]) {
+		if (ArmpitFoldR != NULL && ArmpitBackFoldR != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = new EgVertex(
+				ArmpitRPt->m_Pos[0],
+				ArmpitRPt->m_Pos[1],
+				(m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]->m_Pos[2] + m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R]->m_Pos[2]) / 2
+			);
+			_cprintf("Armpit Pt (R) : ");
+			printVert(m_LandmarkPose1[POSE1_LANDMARK_ARMPIT]);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = NULL;
+			_cprintf("Armpit Pt (R) : NOT FOUND!\n");
+		}
 	}
 
 
@@ -666,6 +701,12 @@ void Pose1_FindArmpitPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::어깨가쪽점  (R/L)
 // 마지막 수정일 : 2020. 10. 26
 void Pose1_FindShoulderPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_SHOULDER_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_SHOULDER_L]
+		&& !m_bFindLandmark[POSE1_LANDMARK_SHOULDERSIDE_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_SHOULDERSIDE_L])
+		return;
+
 	EgVertex *ArmpitR = m_LandmarkPose1[POSE1_LANDMARK_ARMPIT],
 		*ArmpitL = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_L],
 		*ArmpitFrontR = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_R],
@@ -691,61 +732,71 @@ void Pose1_FindShoulderPt(EgMesh *pMesh) {
 		*ShoulderSideRightPt = NULL,
 			*ShoulderSideLeftPt = NULL;
 
-
 	EgSlicer theSlicer;
-	theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), EgPos(ArmpitR->m_Pos[0], ArmpitR->m_Pos[1] + 50, ArmpitR->m_Pos[2])));
-	theSlicer.Slice(pMesh);
-
 	std::vector<EgPos> Pts;
-	for (EgPos p : theSlicer.m_CutLines[0]) {
-		if (p[0] < (m_MinX + m_MaxX) / 2) {
-			Pts.push_back(p);
-		}
-	}
 	std::vector<EgPos> SortedPts;
-	SK_Sort_By_Curvature(Pts, SortedPts, true, false, EgVec3());
-
-	EgVertex *v = FindClosestVert(pMesh, SortedPts[0]);
 	std::vector<EgPos> Path;
-	SK_Planar_Perimeter(v, &EgPlane(EgVec3(1, 0, 0), v->m_Pos), Path, false);
 
+	EgVertex *v;
 	EgPos maxY(0, -INFINITY, 0);
-	for (EgPos pos : Path) {
-		if (pos.m_Coords[1] > maxY.m_Coords[1]) {
-			maxY = pos;
+	EgPos minX(INFINITY, 0, 0);
+
+	// 어깨점(R)을 찾아야할 때만 수행
+	if (m_bFindLandmark[POSE1_LANDMARK_SHOULDER_R]) {
+		theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), EgPos(ArmpitR->m_Pos[0], ArmpitR->m_Pos[1] + 50, ArmpitR->m_Pos[2])));
+		theSlicer.Slice(pMesh);
+
+		for (EgPos p : theSlicer.m_CutLines[0]) {
+			if (p[0] < (m_MinX + m_MaxX) / 2) {
+				Pts.push_back(p);
+			}
 		}
+		SK_Sort_By_Curvature(Pts, SortedPts, true, false, EgVec3());
+
+		v = FindClosestVert(pMesh, SortedPts[0]);
+		SK_Planar_Perimeter(v, &EgPlane(EgVec3(1, 0, 0), v->m_Pos), Path, false);
+
+		for (EgPos pos : Path) {
+			if (pos.m_Coords[1] > maxY.m_Coords[1]) {
+				maxY = pos;
+			}
+		}
+
+		ShoulderRightPt = FindClosestVert(pMesh, maxY);
+
+		ShoulderRightPt = SK_Elliptic_Vertex(ShoulderRightPt, 50.0);
+		theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), ShoulderRightPt->m_Pos));
+		theSlicer.Slice(pMesh);
+
+		for (EgPos pos : theSlicer.m_CutLines[0]) {
+			minX = (pos[0] < minX[0]) ? pos : minX;
+		}
+
+		ShoulderRightPt = FindClosestVert(pMesh, minX);
 	}
-
-	ShoulderRightPt = FindClosestVert(pMesh, maxY);
-
-	ShoulderRightPt = SK_Elliptic_Vertex(ShoulderRightPt, 50.0);
-	theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), ShoulderRightPt->m_Pos));
-	theSlicer.Slice(pMesh);
-
-	EgPos minX = EgPos(INFINITY, 0, 0);
-	for (EgPos pos : theSlicer.m_CutLines[0]) {
-		minX = (pos[0] < minX[0]) ? pos : minX;
+	// 어꺠점(R)이 수동 지정 됐을 때 ShoulderRightPt 할당해준다 (20. 12. 8)
+	else {
+		ShoulderRightPt = m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_R];
 	}
-
-	ShoulderRightPt = FindClosestVert(pMesh, minX);
 	
 
 	//////////////// 어깨점(R), 어깨가쪽점(R)
 	if (ShoulderRightPt != NULL) {
-		// ShoulderRightPt = SK_Elliptic_Vertex(ShoulderRightPt, 30);
-		// ShoulderRightPt = FindClosestVert(pMesh, EgPos(ShoulderRightPt->m_Pos[0], ShoulderRightPt->m_Pos[1], minXonPln.m_Coords[2]));
+		if (m_bFindLandmark[POSE1_LANDMARK_SHOULDER_R]) { 
+			m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_R] = ShoulderRightPt;
+			_cprintf("Shoulder (R) : ");
+			printVert(ShoulderRightPt);
+		}
 
-		m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_R] = ShoulderRightPt;
-		_cprintf("Shoulder (R) : ");
-		printVert(ShoulderRightPt);
-
-		m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R] = FindClosestVert(pMesh,
-			EgPos(ShoulderRightPt->m_Pos[0], 
-				ShoulderRightPt->m_Pos[1],
-				ArmpitR->m_Pos[2])
+		if (m_bFindLandmark[POSE1_LANDMARK_SHOULDERSIDE_R]) {
+			m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R] = FindClosestVert(pMesh,
+				EgPos(ShoulderRightPt->m_Pos[0],
+					ShoulderRightPt->m_Pos[1],
+					ArmpitR->m_Pos[2])
 			);
-		_cprintf("ShoulderSide (R) : ");
-		printVert(m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R]);
+			_cprintf("ShoulderSide (R) : ");
+			printVert(m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R]);
+		}
 	}
 	else {
 		_cprintf("Shoulder (R) : NOT FOUND! Replacing... \n");
@@ -776,65 +827,72 @@ void Pose1_FindShoulderPt(EgMesh *pMesh) {
 	}
 
 
-	theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), EgPos(ArmpitL->m_Pos[0], ArmpitL->m_Pos[1] + 50, ArmpitL->m_Pos[2])));
-	theSlicer.Slice(pMesh);
 
-	Pts.clear();
-	for (EgPos p : theSlicer.m_CutLines[0]) {
-		if (p[0] > (m_MinX + m_MaxX) / 2) {
-			Pts.push_back(p);
+	// 어깨점(L)을 찾아야할 때만 수행
+	if (m_bFindLandmark[POSE1_LANDMARK_SHOULDER_L]) {
+		theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), EgPos(ArmpitL->m_Pos[0], ArmpitL->m_Pos[1] + 50, ArmpitL->m_Pos[2])));
+		theSlicer.Slice(pMesh);
+
+		Pts.clear();
+		for (EgPos p : theSlicer.m_CutLines[0]) {
+			if (p[0] > (m_MinX + m_MaxX) / 2) {
+				Pts.push_back(p);
+			}
 		}
-	}
-	SortedPts.clear();
-	SK_Sort_By_Curvature(Pts, SortedPts, true, false, EgVec3());
+		SortedPts.clear();
+		SK_Sort_By_Curvature(Pts, SortedPts, true, false, EgVec3());
 
-	v = FindClosestVert(pMesh, SortedPts[0]);
-	Path.clear();
-	SK_Planar_Perimeter(v, &EgPlane(EgVec3(1, 0, 0), v->m_Pos), Path, false);
+		v = FindClosestVert(pMesh, SortedPts[0]);
+		Path.clear();
+		SK_Planar_Perimeter(v, &EgPlane(EgVec3(1, 0, 0), v->m_Pos), Path, false);
 
-	maxY = EgPos(0, -INFINITY, 0);
-	for (EgPos pos : Path) {
-		if (pos.m_Coords[1] > maxY.m_Coords[1]) {
-			maxY = pos;
+		maxY = EgPos(0, -INFINITY, 0);
+		for (EgPos pos : Path) {
+			if (pos.m_Coords[1] > maxY.m_Coords[1]) {
+				maxY = pos;
+			}
 		}
+
+
+		ShoulderLeftPt = FindClosestVert(pMesh, maxY);
+		ShoulderLeftPt = SK_Elliptic_Vertex(ShoulderLeftPt, 50.0);
+		theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), ShoulderLeftPt->m_Pos));
+		theSlicer.Slice(pMesh);
+
+		EgPos maxX = EgPos(-INFINITY, 0, 0);
+		for (EgPos pos : theSlicer.m_CutLines[0]) {
+			maxX = (pos[0] > maxX[0]) ? pos : maxX;
+		}
+
+		_cprintf("maxY (L): %f %f %f\n", maxY[0], maxY[1], maxY[2]);
+		_cprintf("Elliptic (L): %f %f %f\n", ShoulderLeftPt->m_Pos[0], ShoulderLeftPt->m_Pos[1], ShoulderLeftPt->m_Pos[2]);
+		_cprintf("maxX (L): %f %f %f\n", maxX[0], maxX[1], maxX[2]);
+
+		ShoulderLeftPt = FindClosestVert(pMesh, maxX);
 	}
-
-	// GetView()->SetPoint(Path);
-
-
-	ShoulderLeftPt = FindClosestVert(pMesh, maxY);
-	ShoulderLeftPt = SK_Elliptic_Vertex(ShoulderLeftPt, 50.0);
-	theSlicer.SetCutPlane(EgPlane(EgVec3(0, 1, 0), ShoulderLeftPt->m_Pos));
-	theSlicer.Slice(pMesh);
-	
-	EgPos maxX = EgPos(-INFINITY, 0, 0);
-	for (EgPos pos : theSlicer.m_CutLines[0]) {
-		maxX = (pos[0] > maxX[0]) ? pos : maxX;
+	// 어깨점(L)이 수동 지정 됐을 때, ShoulderLeftPt 할당 필요 (20. 12. 8)
+	else {
+		ShoulderLeftPt = m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_L];
 	}
-
-	_cprintf("maxY (L): %f %f %f\n", maxY[0], maxY[1], maxY[2]);
-	_cprintf("Elliptic (L): %f %f %f\n", ShoulderLeftPt->m_Pos[0], ShoulderLeftPt->m_Pos[1], ShoulderLeftPt->m_Pos[2]);
-	_cprintf("maxX (L): %f %f %f\n", maxX[0], maxX[1], maxX[2]);
-
-	ShoulderLeftPt = FindClosestVert(pMesh, maxX);
 
 
 	//////////////// 어깨점(L), 어깨가쪽점(L)
 	if (ShoulderLeftPt != NULL) {
-		// ShoulderLeftPt = SK_Elliptic_Vertex(ShoulderLeftPt, 30);
+		if (m_bFindLandmark[POSE1_LANDMARK_SHOULDER_L]) {
+			m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_L] = ShoulderLeftPt;
+			_cprintf("Shoulder (L) : ");
+			printVert(ShoulderLeftPt);
+		}
 
-		m_LandmarkPose1[POSE1_LANDMARK_SHOULDER_L] = ShoulderLeftPt;
-		_cprintf("Shoulder (L) : ");
-		printVert(ShoulderLeftPt);
-
-		m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L] = FindClosestVert(pMesh,
-			EgPos(ShoulderLeftPt->m_Pos[0], 
-				ShoulderLeftPt->m_Pos[1],
-				ArmpitL->m_Pos[2])
+		if (m_bFindLandmark[POSE1_LANDMARK_SHOULDERSIDE_L]) {
+			m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L] = FindClosestVert(pMesh,
+				EgPos(ShoulderLeftPt->m_Pos[0],
+					ShoulderLeftPt->m_Pos[1],
+					ArmpitL->m_Pos[2])
 			);
-
-		_cprintf("ShoulderSide (L) : ");
-		printVert(m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L]);
+			_cprintf("ShoulderSide (L) : ");
+			printVert(m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L]);
+		}
 	}
 	else {
 		_cprintf("Shoulder (L) : NOT FOUND! Replacing... \n");
@@ -869,6 +927,9 @@ void Pose1_FindShoulderPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::목옆점 
 // 마지막 수정일 : 2020. 11. 21
 void Pose1_FindSideNeckPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_NECK_SIDE])
+		return;
+
 	EgVertex *NeckSidePt = NULL,
 		*NeckSideLeftPt = NULL;
 
@@ -992,6 +1053,9 @@ void Pose1_FindSideNeckPt(EgMesh *pMesh) {
 ///////////////////////////////////////  측정점::목앞점
 // 마지막 수정일 : 2020. 12. 3
 void Pose1_FindFneckPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_NECK_FRONT])
+		return;
+
 	EgVertex *FneckPt = NULL;
 
 	EgVertex *SneckPt = m_LandmarkPose1[POSE1_LANDMARK_NECK_SIDE],
@@ -1134,7 +1198,7 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 		}
 	}
 
-	GetView()->SetPoint(fneckCurv);
+	// GetView()->SetPoint(fneckCurv);
 
 	// GObList<GVector3f> CrossPtList;
 	std::vector<EgPos> CrossPtList;
@@ -1290,6 +1354,9 @@ void Pose1_FindNosePt(EgMesh *pMesh) {
 // 마지막 수정일 : 2020. 12. 3
 // 목앞점 기준으로 정중앙에서 탐색
 void Pose1_FindJawPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_JAW])
+		return;
+
 	EgVertex *JawPt = NULL;
 	EgVertex *FneckPt = m_LandmarkPose1[POSE1_LANDMARK_NECK_FRONT],
 		*NosePt = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_NOSE];
@@ -1337,71 +1404,77 @@ void Pose1_FindJawPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::장딴지돌출점
 // 마지막 수정일 : 2020. 10. 11
 void Pose1_FindHipnCalfExtrudePt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_HIP_EXTRUDE] && !m_bFindLandmark[POSE1_LANDMARK_CALF_EXTRUDE])
+		return;
+
 	EgVertex *HipExtrudePt = NULL, *CalfExtrudePt = NULL;
 
 	EgSlicer upperSlicer, lowerSlicer;
-	// ToDo::EgSlicer로 횡단면 생성 후 돌출점들 검색(2020.7.14)
-
 	EgPos hip_minZ(0, 0, INFINITY), calf_minZ(0, 0, INFINITY);
 
-	// 엉덩이돌출점 : 상단 탐색 범위
-	for (float i = 1.0f; i >= 0.5; i -= 0.1f) {
-		int upperCount = upperSlicer.Slice(pMesh, 1, i, -1.0, 1.0, -1.0, 0.1, -1.0, 1.0, true);
+	if (m_bFindLandmark[POSE1_LANDMARK_HIP_EXTRUDE]) {
+		// 엉덩이돌출점 : 상단 탐색 범위
+		for (float i = 1.0f; i >= 0.5; i -= 0.1f) {
+			int upperCount = upperSlicer.Slice(pMesh, 1, i, -1.0, 1.0, -1.0, 0.1, -1.0, 1.0, true);
 
-		// 절단면에 팔이 포함될 수 있으므로 절단면 둘레 길이로 정렬한 후,
-		upperSlicer.SortByLength(true); // true: 내림차순
+			// 절단면에 팔이 포함될 수 있으므로 절단면 둘레 길이로 정렬한 후,
+			upperSlicer.SortByLength(true); // true: 내림차순
 
-		// 최대 둘레 길이(몸통둘레)를 선택 (upperSlicer.m_CutLines[0])
-		// 그 중 최소 z 값을 갖는 점을 엉덩이돌출점으로 지정
-		for (EgPos p : upperSlicer.m_CutLines[0]) {
-			if (p.m_Coords[2] < hip_minZ.m_Coords[2] && p.m_Coords[0] < upperSlicer.GetCenterPos(0).m_Coords[0]) {
-				hip_minZ = p;
+			// 최대 둘레 길이(몸통둘레)를 선택 (upperSlicer.m_CutLines[0])
+			// 그 중 최소 z 값을 갖는 점을 엉덩이돌출점으로 지정
+			for (EgPos p : upperSlicer.m_CutLines[0]) {
+				if (p.m_Coords[2] < hip_minZ.m_Coords[2] && p.m_Coords[0] < upperSlicer.GetCenterPos(0).m_Coords[0]) {
+					hip_minZ = p;
+				}
 			}
 		}
-	}
-	HipExtrudePt = FindClosestVert(pMesh, hip_minZ);
-	if (HipExtrudePt != NULL) {
-		HipExtrudePt = SK_Extreme_Vertex(HipExtrudePt, 50.0f, 5, 1);
-		m_LandmarkPose1[POSE1_LANDMARK_HIP_EXTRUDE] = HipExtrudePt;
-		_cprintf("Hip Extrude Pt : ");
-		printVert(HipExtrudePt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_HIP_EXTRUDE] = NULL;
-		_cprintf("Hip Extrude Pt : NOT FOUND!\n");
-	}
-
-	// 장딴지돌출점 : 하단 탐색 범위
-	// 탐색 범위는 임의로 0.1으로 지정한다
-	// B/C 뒷꿈치가 찾아지는 경우가 있어서 제외
-	for (float i = 0.5f; i > 0.1f; i -= 0.1f) {
-		int lowerCount = lowerSlicer.Slice(pMesh, 1, i, -1.0, 1.0, -1.0, 0.1, -1.0, 1.0, true);
-
-		lowerSlicer.SortByLength(true);
-		int rightIdx = 0;
-		if (lowerSlicer.GetNumCutLine() > 1) {
-			if (lowerSlicer.GetCenterPos(1).m_Coords[0] < lowerSlicer.GetCenterPos(0).m_Coords[0])
-				rightIdx = 1;
+		HipExtrudePt = FindClosestVert(pMesh, hip_minZ);
+		if (HipExtrudePt != NULL) {
+			HipExtrudePt = SK_Extreme_Vertex(HipExtrudePt, 50.0f, 5, 1);
+			m_LandmarkPose1[POSE1_LANDMARK_HIP_EXTRUDE] = HipExtrudePt;
+			_cprintf("Hip Extrude Pt : ");
+			printVert(HipExtrudePt);
 		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_HIP_EXTRUDE] = NULL;
+			_cprintf("Hip Extrude Pt : NOT FOUND!\n");
+		}
+	}
 
-		for (EgPos p : lowerSlicer.m_CutLines[rightIdx]) {
-			if (p.m_Coords[2] < calf_minZ.m_Coords[2] && p.m_Coords[0] < lowerSlicer.GetCenterPos(rightIdx).m_Coords[0]) {
-				calf_minZ = p;
+
+	if (m_bFindLandmark[POSE1_LANDMARK_CALF_EXTRUDE]) {
+		// 장딴지돌출점 : 하단 탐색 범위
+		// 탐색 범위는 임의로 0.1으로 지정한다
+		// B/C 뒷꿈치가 찾아지는 경우가 있어서 제외
+		for (float i = 0.5f; i > 0.1f; i -= 0.1f) {
+			int lowerCount = lowerSlicer.Slice(pMesh, 1, i, -1.0, 1.0, -1.0, 0.1, -1.0, 1.0, true);
+
+			lowerSlicer.SortByLength(true);
+			int rightIdx = 0;
+			if (lowerSlicer.GetNumCutLine() > 1) {
+				if (lowerSlicer.GetCenterPos(1).m_Coords[0] < lowerSlicer.GetCenterPos(0).m_Coords[0])
+					rightIdx = 1;
+			}
+
+			for (EgPos p : lowerSlicer.m_CutLines[rightIdx]) {
+				if (p.m_Coords[2] < calf_minZ.m_Coords[2] && p.m_Coords[0] < lowerSlicer.GetCenterPos(rightIdx).m_Coords[0]) {
+					calf_minZ = p;
+				}
 			}
 		}
-	}
 
-	CalfExtrudePt = FindClosestVert(pMesh, calf_minZ);
-	
-	if (CalfExtrudePt != NULL) {
-		CalfExtrudePt = SK_Extreme_Vertex(CalfExtrudePt, 50.0f, 5, 1);
-		m_LandmarkPose1[POSE1_LANDMARK_CALF_EXTRUDE] = CalfExtrudePt;
-		_cprintf("Calf Extrude Pt : ");
-		printVert(CalfExtrudePt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_CALF_EXTRUDE] = NULL;
-		_cprintf("Calf Extrude Pt : NOT FOUND!\n");
+		CalfExtrudePt = FindClosestVert(pMesh, calf_minZ);
+
+		if (CalfExtrudePt != NULL) {
+			CalfExtrudePt = SK_Extreme_Vertex(CalfExtrudePt, 50.0f, 5, 1);
+			m_LandmarkPose1[POSE1_LANDMARK_CALF_EXTRUDE] = CalfExtrudePt;
+			_cprintf("Calf Extrude Pt : ");
+			printVert(CalfExtrudePt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_CALF_EXTRUDE] = NULL;
+			_cprintf("Calf Extrude Pt : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -1409,6 +1482,9 @@ void Pose1_FindHipnCalfExtrudePt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::볼기고랑점
 // 마지막 수정일 : 2020. 10. 19
 void Pose1_FindUnderHipPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_UNDERHIP])
+		return;
+
 	EgVertex *UnderHipPt = NULL;
 	EgVertex *HipExtrudePt = m_LandmarkPose1[POSE1_LANDMARK_HIP_EXTRUDE],
 		*CalfExtrudePt = m_LandmarkPose1[POSE1_LANDMARK_CALF_EXTRUDE];
@@ -1448,60 +1524,71 @@ void Pose1_FindUnderHipPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::배꼽점(앞/뒤)
 // 마지막 수정일 : 2020. 10. 19
 void Pose1_FindNavelPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_NAVEL] && !m_bFindLandmark[POSE1_LANDMARK_NAVEL_BACK])
+		return;
+
 	EgVertex *NavelPt = NULL,
 		*NavelPt_Back = NULL;
 
-	EgLine ray(EgPos((m_MinX + m_MaxX)/2, m_MaxY * 0.6, m_MaxZ), EgVec3(0, 0, -1));
-	for (EgFace *f : pMesh->m_pFaces) {
-		EgPos p0 = f->GetVertexPos(0);
-		EgPos p1 = f->GetVertexPos(1);
-		EgPos p2 = f->GetVertexPos(2);
+	EgLine ray(EgPos((m_MinX + m_MaxX) / 2, m_MaxY * 0.6, m_MaxZ), EgVec3(0, 0, -1));
+	if (m_bFindLandmark[POSE1_LANDMARK_NAVEL]) {
+		for (EgFace *f : pMesh->m_pFaces) {
+			EgPos p0 = f->GetVertexPos(0);
+			EgPos p1 = f->GetVertexPos(1);
+			EgPos p2 = f->GetVertexPos(2);
 
-		EgPos tmpIntersection;
-		if (intersect_line_triangle(p0, p1, p2, ray, tmpIntersection, true)) {
-			NavelPt = FindClosestVert(pMesh, tmpIntersection);
+			EgPos tmpIntersection;
+			if (intersect_line_triangle(p0, p1, p2, ray, tmpIntersection, true)) {
+				NavelPt = FindClosestVert(pMesh, tmpIntersection);
+			}
+		}
+
+		//////////// 배꼽점(앞)
+		if (NavelPt != NULL) {
+			// Hyperbolic으로 찾으면 근육 같이 패인 곳이 찾아지므로 Elliptic을 찾는 것이 나음
+			NavelPt = SK_Elliptic_Vertex(NavelPt, 50.0);
+			m_LandmarkPose1[POSE1_LANDMARK_NAVEL] = NavelPt;
+			_cprintf("Navel Pt : ");
+			printVert(NavelPt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_NAVEL] = NULL;
+			_cprintf("Navel Pt : NOT FOUND!\n");
 		}
 	}
-
-	//////////// 배꼽점(앞)
-	if (NavelPt != NULL) {
-		// Hyperbolic으로 찾으면 근육 같이 패인 곳이 찾아지므로 Elliptic을 찾는 것이 나음
-		NavelPt = SK_Elliptic_Vertex(NavelPt, 50.0);
-		m_LandmarkPose1[POSE1_LANDMARK_NAVEL] = NavelPt;
-		_cprintf("Navel Pt : ");
-		printVert(NavelPt);
-	}
+	// 배꼽점이 수동 지정됐을 때, NavelPt 할당 필요 (20. 12. 8)
 	else {
-		m_LandmarkPose1[POSE1_LANDMARK_NAVEL] = NULL;
-		_cprintf("Navel Pt : NOT FOUND!\n");
+		NavelPt = m_LandmarkPose1[POSE1_LANDMARK_NAVEL];
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// 배꼽앞점에서 뒤로 ray를 쏴서 만나는 점
-	EgPos tmpNavelPt_Back;
-	ray = EgLine(NavelPt->m_Pos, EgVec3(0, 0, 1));
-	for (EgFace *face : pMesh->m_pFaces) {
-		EgPos p0 = face->GetVertexPos(0);
-		EgPos p1 = face->GetVertexPos(1);
-		EgPos p2 = face->GetVertexPos(2);
+	if (m_bFindLandmark[POSE1_LANDMARK_NAVEL_BACK]) {
+		// 배꼽앞점에서 뒤로 ray를 쏴서 만나는 점
+		EgPos tmpNavelPt_Back;
+		ray = EgLine(NavelPt->m_Pos, EgVec3(0, 0, 1));
+		for (EgFace *face : pMesh->m_pFaces) {
+			EgPos p0 = face->GetVertexPos(0);
+			EgPos p1 = face->GetVertexPos(1);
+			EgPos p2 = face->GetVertexPos(2);
 
-		EgPos tmpIntersection;
-		if (intersect_line_triangle(p0, p1, p2, ray, tmpIntersection)) {
-			tmpNavelPt_Back = tmpIntersection;
+			EgPos tmpIntersection;
+			if (intersect_line_triangle(p0, p1, p2, ray, tmpIntersection)) {
+				tmpNavelPt_Back = tmpIntersection;
+			}
 		}
-	}
 
-	//////////// 배꼽점(뒤)
-	NavelPt_Back = FindClosestVert(pMesh, tmpNavelPt_Back);
-	if (NavelPt_Back != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_NAVEL_BACK] = NavelPt_Back;
-		_cprintf("Navel Pt Back : ");
-		printVert(NavelPt_Back);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_NAVEL_BACK] = NULL;
-		_cprintf("Navel Pt Back : NOT FOUND!\n");
+		//////////// 배꼽점(뒤)
+		NavelPt_Back = FindClosestVert(pMesh, tmpNavelPt_Back);
+		if (NavelPt_Back != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_NAVEL_BACK] = NavelPt_Back;
+			_cprintf("Navel Pt Back : ");
+			printVert(NavelPt_Back);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_NAVEL_BACK] = NULL;
+			_cprintf("Navel Pt Back : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -1510,6 +1597,9 @@ void Pose1_FindNavelPt(EgMesh *pMesh) {
 // 마지막 수정일 : 2020. 10. 24
 // 배돌출점 탐색범위 내 가장 큰 z값은 갖는 점
 void Pose1_FindStomachExtrudePt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_STOMACH_EXTRUDE])
+		return;
+
 	EgVertex* StomachExtrudePt = NULL;
 
 	float upperStomachBound = m_LandmarkPose1[POSE1_LANDMARK_NAVEL]->m_Pos[1] + 10.0;
@@ -1550,6 +1640,11 @@ void Pose1_FindStomachExtrudePt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::오금점
 // 마지막 수정일 : 2020. 11. 23
 void Pose1_FindKneePt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_KNEE_MID]
+		&& !m_bFindLandmark[POSE1_LANDMARK_KNEE_SIDE]
+		&& !m_bFindLandmark[POSE1_LANDMARK_POPLITEUS])
+		return;
+
 	EgVertex *KneePt = NULL,
 		*KneeSidePt = NULL,
 		*PopliteusPt = NULL;
@@ -1564,6 +1659,9 @@ void Pose1_FindKneePt(EgMesh *pMesh) {
 	EgSlicer kneeSlicer;
 	int rightIdx = 0;
 	float minPerimeter = INFINITY;
+	EgPos maxZ = EgPos(0, 0, -INFINITY);
+	EgPos maxX = EgPos(-INFINITY, 0, 0);
+
 	for (float i = 0.29; i >= 0.23; i -= 0.01) {
 		int sectionNum = kneeSlicer.Slice(pMesh, 1, i, -1, 1, -1, 1, -1, 1, true);
 		rightIdx = 0;
@@ -1582,9 +1680,6 @@ void Pose1_FindKneePt(EgMesh *pMesh) {
 	}
 
 	// 구해진 단면의 최대 z값을 갖는 점으로부터 40mm(GSizer의 값) 반경에서 최대 z값을 갖는 점
-	EgPos maxZ = EgPos(0, 0, -INFINITY);
-	EgPos maxX = EgPos(-INFINITY, 0, 0);
-
 	for (EgPos pos : kneeLevelSection) {
 		if (pos.m_Coords[0] < (m_MinX + m_MaxX) / 2 && pos.m_Coords[2] > kneeSlicer.GetCenterPos(rightIdx).m_Coords[2]) {
 			if (pos.m_Coords[0] > maxX.m_Coords[0]) {
@@ -1596,75 +1691,79 @@ void Pose1_FindKneePt(EgMesh *pMesh) {
 		}
 	}
 
-	EgPos tmpKneePt = maxZ;
-	tmpKneePt.m_Coords[1] += 40.0;
-	KneePt = FindClosestVert(pMesh, tmpKneePt);
+	if (m_bFindLandmark[POSE1_LANDMARK_KNEE_MID]) {
+		EgPos tmpKneePt = maxZ;
+		tmpKneePt.m_Coords[1] += 40.0;
+		KneePt = FindClosestVert(pMesh, tmpKneePt);
 
+		/////// 무릎뼈가운데점
+		if (KneePt != NULL) {
+			KneePt = SK_Extreme_Vertex(KneePt, 10.0, 4, 1);
 
-	_cprintf("center : %f\n", (m_MinX + m_MaxX) / 2);
-	_cprintf("tmpKneePt : %f\n", tmpKneePt.m_Coords[0]);
-
-
-	/////// 무릎뼈가운데점
-	if (KneePt != NULL) {
-		KneePt = SK_Extreme_Vertex(KneePt, 10.0, 4, 1);
-
-		m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID] = KneePt;
-		_cprintf("Knee Pt : ");
-		printVert(KneePt);
+			m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID] = KneePt;
+			_cprintf("Knee Pt : ");
+			printVert(KneePt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID] = NULL;
+			_cprintf("Knee Pt : NOT FOUND!\n");
+		}
 	}
 	else {
-		m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID] = NULL;
-		_cprintf("Knee Pt : NOT FOUND!\n");
+		KneePt = m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID];
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// kneeLevelSection에서 최대 x값을 갖는 점을 seed point로 반경 5cm 내 최대 x값을 갖는 점
-	KneeSidePt = FindClosestVert(pMesh, maxX);
+	if (m_bFindLandmark[POSE1_LANDMARK_KNEE_SIDE]) {
+		KneeSidePt = FindClosestVert(pMesh, maxX);
 
-	/////// 정강뼈위점
-	if (KneeSidePt != NULL) {
-		KneeSidePt = SK_Extreme_Vertex(KneeSidePt, 20.0f, 0, 1);
+		/////// 정강뼈위점
+		if (KneeSidePt != NULL) {
+			KneeSidePt = SK_Extreme_Vertex(KneeSidePt, 20.0f, 0, 1);
 
 
-		m_LandmarkPose1[POSE1_LANDMARK_KNEE_SIDE] = KneeSidePt;
-		_cprintf("Knee Side Pt : ");
-		printVert(KneeSidePt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_KNEE_SIDE] = NULL;
-		_cprintf("Knee Side Pt : NOT FOUND!\n");
+			m_LandmarkPose1[POSE1_LANDMARK_KNEE_SIDE] = KneeSidePt;
+			_cprintf("Knee Side Pt : ");
+			printVert(KneeSidePt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_KNEE_SIDE] = NULL;
+			_cprintf("Knee Side Pt : NOT FOUND!\n");
+		}
 	}
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
-	EgLine rayPopliteus(KneePt->m_Pos, EgVec3(0, 0, 1));
+	if (m_bFindLandmark[POSE1_LANDMARK_POPLITEUS]) {
+		EgLine rayPopliteus(KneePt->m_Pos, EgVec3(0, 0, 1));
 
-	// 무릎뼈가운데점에서 뒤쪽으로 ray를 쏴서 만나는 교차점에서 1cm 밑으로 내려간 점
-	EgPos tmpPopliteusPt;
-	for (EgFace *face : pMesh->m_pFaces) {
-		EgPos p0 = face->GetVertexPos(0);
-		EgPos p1 = face->GetVertexPos(1);
-		EgPos p2 = face->GetVertexPos(2);
+		// 무릎뼈가운데점에서 뒤쪽으로 ray를 쏴서 만나는 교차점에서 1cm 밑으로 내려간 점
+		EgPos tmpPopliteusPt;
+		for (EgFace *face : pMesh->m_pFaces) {
+			EgPos p0 = face->GetVertexPos(0);
+			EgPos p1 = face->GetVertexPos(1);
+			EgPos p2 = face->GetVertexPos(2);
 
-		EgPos tmpIntersection;
-		if (intersect_line_triangle(p0, p1, p2, rayPopliteus, tmpIntersection, true)) {
-			tmpPopliteusPt = tmpIntersection;
+			EgPos tmpIntersection;
+			if (intersect_line_triangle(p0, p1, p2, rayPopliteus, tmpIntersection, true)) {
+				tmpPopliteusPt = tmpIntersection;
+			}
 		}
-	}
 
-	tmpPopliteusPt.m_Coords[1] -= 10.0;
+		tmpPopliteusPt.m_Coords[1] -= 10.0;
 
-	/////// 오금점
-	PopliteusPt = FindClosestVert(pMesh, tmpPopliteusPt);
-	if (PopliteusPt != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_POPLITEUS] = PopliteusPt;
-		_cprintf("Popliteus pt : ");
-		printVert(PopliteusPt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_POPLITEUS] = NULL;
-		_cprintf("Popliteus pt : NOT FOUND!\n");
+		/////// 오금점
+		PopliteusPt = FindClosestVert(pMesh, tmpPopliteusPt);
+		if (PopliteusPt != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_POPLITEUS] = PopliteusPt;
+			_cprintf("Popliteus pt : ");
+			printVert(PopliteusPt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_POPLITEUS] = NULL;
+			_cprintf("Popliteus pt : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -1673,6 +1772,9 @@ void Pose1_FindKneePt(EgMesh *pMesh) {
 // 마지막 수정일 : 2020. 10. 19
 // 샅점 밑에 두 다리가 붙어서 스캔된 데이터의 최하단점에서 샅점 위의 돌출 부분까지의 직선에서 거리가 가장 먼 점
 void Pose1_FindCrotchPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_CROTCH])
+		return;
+
 	EgVertex *CrotchPt = NULL;
 	EgVertex *StomachExtrudePt = m_LandmarkPose1[POSE1_LANDMARK_STOMACH_EXTRUDE],
 		*KneePt = m_LandmarkPose1[POSE1_LANDMARK_KNEE_MID];
@@ -1768,6 +1870,9 @@ void Pose1_FindCrotchPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::목뒤점
 // 마지막 수정일 : 2020. 10. 12
 void Pose1_FindBackNeckPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_NECK_BACK])
+		return;
+
 	EgVertex *BneckPt = NULL;
 	EgVertex *FneckPt = m_LandmarkPose1[POSE1_LANDMARK_NECK_FRONT],
 		*SideNeckPt = m_LandmarkPose1[POSE1_LANDMARK_NECK_SIDE];
@@ -1820,6 +1925,11 @@ void Pose1_FindBackNeckPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::허리뒤점
 // 마지막 수정일 : 2020. 12. 3
 void Pose1_FindWaistPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_WAIST]
+		&& !m_bFindLandmark[POSE1_LANDMARK_WAIST_FRONT]
+		&& !m_bFindLandmark[POSE1_LANDMARK_WAIST_BACK])
+		return;
+
 	EgVertex *WaistPt = NULL,
 		*WaistFrontPt = NULL,
 		*WaistBackPt = NULL;
@@ -1832,122 +1942,134 @@ void Pose1_FindWaistPt(EgMesh *pMesh) {
 		return;
 	}
 
-
 	float upperWaistBound = m_MaxY * 0.66;
 	float lowerWaistBound = m_MaxY * 0.57;
 
-	std::vector<EgPos> waistCoronal;
-	EgSlicer theSlicer;
-	for (float level = upperWaistBound; level >= lowerWaistBound; level -= 5.0f) {
-		theSlicer.Slice(pMesh, 1, level / m_MaxY, -1, 1, -1, 1, -1, 1, true);
-		theSlicer.Slice(pMesh);
-		theSlicer.SortByLength(true);
+	if (m_bFindLandmark[POSE1_LANDMARK_WAIST]) {
+		std::vector<EgPos> waistCoronal;
+		EgSlicer theSlicer;
+		for (float level = upperWaistBound; level >= lowerWaistBound; level -= 5.0f) {
+			theSlicer.Slice(pMesh, 1, level / m_MaxY, -1, 1, -1, 1, -1, 1, true);
+			theSlicer.Slice(pMesh);
+			theSlicer.SortByLength(true);
 
-		EgPos minX(INFINITY, 0, 0);
+			EgPos minX(INFINITY, 0, 0);
 
-		for (EgPos pos : theSlicer.m_CutLines[0]) {
-			if (pos.m_Coords[0] < minX.m_Coords[0]) {
-				minX = pos;
+			for (EgPos pos : theSlicer.m_CutLines[0]) {
+				if (pos.m_Coords[0] < minX.m_Coords[0]) {
+					minX = pos;
+				}
+			}
+
+			if (minX != EgPos(INFINITY, 0, 0) && minX.m_Coords[0] <= theSlicer.GetCenterPos(0).m_Coords[0] && minX.m_Coords[0] >= ArmpitPt_Front_R->m_Pos[0])
+				waistCoronal.push_back(minX);
+		}
+
+
+		// upperWaistBound ~ waistSilhouette ~ lowerWaistBound 중 각도가 제일 큰 점 || 일자허리의 경우 각도가 0인 점 ?
+		double maxAngle = -INFINITY;
+		for (EgPos pos : waistCoronal) {
+			// upperWaistBound ~ pos
+			EgVec3 upper2pos = upperWaistBound - pos;
+
+			// pos ~ lowerWaistBound
+			EgVec3 pos2lower = lowerWaistBound - pos;
+
+			upper2pos.m_Coords[2] = 0.0;
+			pos2lower.m_Coords[2] = 0.0;
+
+			float currAngle = angle(upper2pos, pos2lower, false);
+			if (currAngle > maxAngle) {
+				maxAngle = currAngle;
+				WaistPt = FindClosestVert(pMesh, pos);
 			}
 		}
 
-		if (minX != EgPos(INFINITY, 0, 0) && minX.m_Coords[0] <= theSlicer.GetCenterPos(0).m_Coords[0] && minX.m_Coords[0] >= ArmpitPt_Front_R->m_Pos[0])
-			waistCoronal.push_back(minX);
-	}
+		if (WaistPt != NULL) {
+			// 허리가 너무 낮거나 높은 경우 통계치로 조정한다
+			float upperBound, lowerBound, avgBound;
+			if (m_bWoman) {
+				upperBound = 0.652;
+				lowerBound = 0.578;
+				avgBound = 0.615;
+			}
+			else {
+				upperBound = 0.649;
+				lowerBound = 0.575;
+				avgBound = 0.612;
+			}
 
+			if (WaistPt->m_Pos[1] > m_MaxY * upperBound || WaistPt->m_Pos[1] < m_MaxY * lowerBound) {
+				WaistPt->m_Pos[1] = m_MaxY * avgBound;
+			}
 
-	// upperWaistBound ~ waistSilhouette ~ lowerWaistBound 중 각도가 제일 큰 점 || 일자허리의 경우 각도가 0인 점 ?
-	double maxAngle = -INFINITY;
-	for (EgPos pos : waistCoronal) {
-		// upperWaistBound ~ pos
-		EgVec3 upper2pos = upperWaistBound - pos;
-
-		// pos ~ lowerWaistBound
-		EgVec3 pos2lower = lowerWaistBound - pos;
-
-		upper2pos.m_Coords[2] = 0.0;
-		pos2lower.m_Coords[2] = 0.0;
-
-		float currAngle = angle(upper2pos, pos2lower, false);
-		if (currAngle > maxAngle) {
-			maxAngle = currAngle;
-			WaistPt = FindClosestVert(pMesh, pos);
-		}
-	}
-
-	if (WaistPt != NULL) {
-		// 허리가 너무 낮거나 높은 경우 통계치로 조정한다
-		float upperBound, lowerBound, avgBound;
-		if (m_bWoman) {
-			upperBound = 0.652;
-			lowerBound = 0.578;
-			avgBound = 0.615;
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST] = WaistPt;
+			_cprintf("Waist Pt : ");
+			printVert(WaistPt);
 		}
 		else {
-			upperBound = 0.649;
-			lowerBound = 0.575;
-			avgBound = 0.612;
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST] = NULL;
+			_cprintf("Waist Pt : NOT FOUND!\n");
 		}
-
-		if (WaistPt->m_Pos[1] > m_MaxY * upperBound || WaistPt->m_Pos[1] < m_MaxY * lowerBound) {
-			WaistPt->m_Pos[1] = m_MaxY * avgBound;
-		}
-
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST] = WaistPt;
-		_cprintf("Waist Pt : ");
-		printVert(WaistPt);
 	}
+	// 허리옆점 수동 지정 경우, WaistPt를 할당해준다 (20. 12. 8)
 	else {
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST] = NULL;
-		_cprintf("Waist Pt : NOT FOUND!\n");
+		WaistPt = m_LandmarkPose1[POSE1_LANDMARK_WAIST];
 	}
 
-
-	// 허리(옆)점을 지나는 횡단면을 EgSlicer의 절단평면으로 
-	EgPlane waistLevelPlane = EgPlane(EgVec3(0.0, 1.0, 0.0), WaistPt->m_Pos);
-	EgSlicer waistSlicer;
-	waistSlicer.SetCutPlane(waistLevelPlane);
-
-	waistSlicer.Slice(pMesh);
 
 	EgPos tmpWaistFrontPt, tmpWaistBackPt;
 	EgPos maxZ = EgPos(0, 0, -INFINITY), minZ = EgPos(0, 0, INFINITY);
-	for (EgPos pos : waistSlicer.m_CutLines[0]) {
-		if (pos.m_Coords[2] > maxZ.m_Coords[2]) {
-			maxZ.m_Coords[2] = pos.m_Coords[2];
-			tmpWaistFrontPt = pos;
+	if (m_bFindLandmark[POSE1_LANDMARK_WAIST_FRONT] || m_bFindLandmark[POSE1_LANDMARK_WAIST_BACK]) {
+		// 허리(옆)점을 지나는 횡단면을 EgSlicer의 절단평면으로 
+		EgPlane waistLevelPlane = EgPlane(EgVec3(0.0, 1.0, 0.0), WaistPt->m_Pos);
+		EgSlicer waistSlicer;
+		waistSlicer.SetCutPlane(waistLevelPlane);
+
+		waistSlicer.Slice(pMesh);
+
+		for (EgPos pos : waistSlicer.m_CutLines[0]) {
+			if (pos.m_Coords[2] > maxZ.m_Coords[2]) {
+				maxZ.m_Coords[2] = pos.m_Coords[2];
+				tmpWaistFrontPt = pos;
+			}
+
+			if (pos.m_Coords[2] < minZ.m_Coords[2]) {
+				minZ.m_Coords[2] = pos.m_Coords[2];
+				tmpWaistBackPt = pos;
+			}
 		}
+	}
 
-		if (pos.m_Coords[2] < minZ.m_Coords[2]) {
-			minZ.m_Coords[2] = pos.m_Coords[2];
-			tmpWaistBackPt = pos;
+	if (m_bFindLandmark[POSE1_LANDMARK_WAIST_FRONT]) {
+		// 가운데 수준으로 이동
+		tmpWaistFrontPt.m_Coords[0] = (m_MaxX + m_MinX) / 2;
+		WaistFrontPt = FindClosestVert(pMesh, tmpWaistFrontPt);
+		if (WaistFrontPt != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST_FRONT] = WaistFrontPt;
+			_cprintf("Waist Front Pt : ");
+			printVert(WaistFrontPt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST_FRONT] = NULL;
+			_cprintf("Waist Front Pt : NOT FOUND!\n");
 		}
 	}
 
-	// 가운데 수준으로 이동
-	tmpWaistFrontPt.m_Coords[0] = (m_MaxX + m_MinX) / 2;
-	WaistFrontPt = FindClosestVert(pMesh, tmpWaistFrontPt);
-	tmpWaistBackPt.m_Coords[0] = (m_MaxX + m_MinX) / 2;
-	WaistBackPt = FindClosestVert(pMesh, tmpWaistBackPt);
 
-	if (WaistFrontPt != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST_FRONT] = WaistFrontPt;
-		_cprintf("Waist Front Pt : ");
-		printVert(WaistFrontPt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST_FRONT] = NULL;
-		_cprintf("Waist Front Pt : NOT FOUND!\n");
-	}
-
-	if (WaistBackPt != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST_BACK] = WaistBackPt;
-		_cprintf("Waist Back Pt : ");
-		printVert(WaistBackPt);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_WAIST_BACK] = NULL;
-		_cprintf("Waist Back Pt : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_WAIST_BACK]) {
+		// 가운데 수준으로 이동
+		tmpWaistBackPt.m_Coords[0] = (m_MaxX + m_MinX) / 2;
+		WaistBackPt = FindClosestVert(pMesh, tmpWaistBackPt);
+		if (WaistBackPt != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST_BACK] = WaistBackPt;
+			_cprintf("Waist Back Pt : ");
+			printVert(WaistBackPt);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_WAIST_BACK] = NULL;
+			_cprintf("Waist Back Pt : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -1955,6 +2077,9 @@ void Pose1_FindWaistPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::가쪽복사점
 // 마지막 수정일 : 2020. 11. 23
 void Pose1_FindAnklePt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_ANKLE])
+		return;
+
 	EgVertex *AnklePt = NULL;
 
 	// (장딴지 돌출점:바닥)=2:1 지점에서 밑으로 절단면 둘레 길이가 가장 작은 수준의 최소 x값을 갖는 점
@@ -2015,6 +2140,9 @@ void Pose1_FindAnklePt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::젖꼭지점
 // 마지막 수정일 : 2020. 11. 21
 void Pose1_FindBustPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_BP_R] && !m_bFindLandmark[POSE1_LANDMARK_BP_L])
+		return;
+
 	EgVertex *BustPt_R = NULL, 
 		*BustPt_L = NULL;
 
@@ -2072,30 +2200,34 @@ void Pose1_FindBustPt(EgMesh *pMesh) {
 		}
 	}
 
-	BustPt_R = FindClosestVert(pMesh, rightSeedPt);
-	// 7cm 반경을 탐색 (3->7cm; 2020. 11. 21)
-	if (BustPt_R != NULL) {
-		BustPt_R = SK_Elliptic_Vertex(BustPt_R, 70);
-		m_LandmarkPose1[POSE1_LANDMARK_BP_R] = BustPt_R;
-		_cprintf("Bust Pt R : ");
-		printVert(BustPt_R);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_BP_R] = NULL;
-		_cprintf("Bust Pt R : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_BP_R]) {
+		BustPt_R = FindClosestVert(pMesh, rightSeedPt);
+		// 7cm 반경을 탐색 (3->7cm; 2020. 11. 21)
+		if (BustPt_R != NULL) {
+			BustPt_R = SK_Elliptic_Vertex(BustPt_R, 70);
+			m_LandmarkPose1[POSE1_LANDMARK_BP_R] = BustPt_R;
+			_cprintf("Bust Pt R : ");
+			printVert(BustPt_R);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_BP_R] = NULL;
+			_cprintf("Bust Pt R : NOT FOUND!\n");
+		}
 	}
 
 
-	BustPt_L = FindClosestVert(pMesh, leftSeedPt);
-	if (BustPt_L != NULL) {
-		BustPt_L = SK_Elliptic_Vertex(BustPt_L, 70);
-		m_LandmarkPose1[POSE1_LANDMARK_BP_L] = BustPt_L;
-		_cprintf("Bust Pt L : ");
-		printVert(BustPt_L);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_BP_L] = NULL;
-		_cprintf("Bust Pt L : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_BP_L]) {
+		BustPt_L = FindClosestVert(pMesh, leftSeedPt);
+		if (BustPt_L != NULL) {
+			BustPt_L = SK_Elliptic_Vertex(BustPt_L, 70);
+			m_LandmarkPose1[POSE1_LANDMARK_BP_L] = BustPt_L;
+			_cprintf("Bust Pt L : ");
+			printVert(BustPt_L);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_BP_L] = NULL;
+			_cprintf("Bust Pt L : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -2108,6 +2240,13 @@ void Pose1_FindBustPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::겨드랑뒤접힘점(R/L)
 // 마지막 수정일 : 2020. 10. 27
 void Pose1_ModifyArmpitWithShoudler(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_ARMPIT]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_L]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_L])
+		return;
+
 	EgVertex *BustPt = m_LandmarkPose1[POSE1_LANDMARK_BP_R],
 		*ShoulderSidePt_R = m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R],
 		*ShoulderSidePt_L = m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L],
@@ -2194,82 +2333,108 @@ void Pose1_ModifyArmpitWithShoudler(EgMesh *pMesh) {
 
 
 	////////////////////  겨드랑점 (R)
-	ArmpitPt_R = new EgVertex(ArmpitPt_R->m_Pos[0], currLevel_R, ArmpitPt_R->m_Pos[2]);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPIT]) {
+		// Mesh Vertex가 아니므로 그냥 좌표 값을 바꿔준다 (20. 12. 8)
+		// ArmpitPt_R = new EgVertex(ArmpitPt_R->m_Pos[0], currLevel_R, ArmpitPt_R->m_Pos[2]);
+		ArmpitPt_R->m_Pos[1] = currLevel_R;
+		m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = ArmpitPt_R;
+		_cprintf("------- Modified Armpit (R) : ");
+		printVert(ArmpitPt_R);
 
-	m_LandmarkPose1[POSE1_LANDMARK_ARMPIT] = ArmpitPt_R;
-	_cprintf("------- Modified Armpit (R) : ");
-	printVert(ArmpitPt_R);
+		////////////////////  겨드랑앞점 (R)
+		ArmpitPt_Front_R = FindClosestVert(pMesh, EgPos(ArmpitPt_Front_R->m_Pos[0], currLevel_R, ArmpitPt_Front_R->m_Pos[2]));
+		m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_R] = ArmpitPt_Front_R;
+		_cprintf("------- Modified Armpit Front (R) : ");
+		printVert(ArmpitPt_Front_R);
 
 
-	////////////////////  겨드랑앞점 (R)
-	ArmpitPt_Front_R = FindClosestVert(pMesh, EgPos(ArmpitPt_Front_R->m_Pos[0], currLevel_R, ArmpitPt_Front_R->m_Pos[2]));
-	m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_R] = ArmpitPt_Front_R;
-	_cprintf("------- Modified Armpit Front (R) : ");
-	printVert(ArmpitPt_Front_R);
-
-
-	////////////////////  겨드랑뒤점 (R)
-	ArmpitPt_Back_R = FindClosestVert(pMesh, EgPos(ArmpitPt_Back_R->m_Pos[0], currLevel_R, ArmpitPt_Back_R->m_Pos[2]));
-	m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_R] = ArmpitPt_Back_R;
-	_cprintf("------- Modified Armpit Back (R) : ");
-	printVert(ArmpitPt_Back_R);
+		////////////////////  겨드랑뒤점 (R)
+		ArmpitPt_Back_R = FindClosestVert(pMesh, EgPos(ArmpitPt_Back_R->m_Pos[0], currLevel_R, ArmpitPt_Back_R->m_Pos[2]));
+		m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_R] = ArmpitPt_Back_R;
+		_cprintf("------- Modified Armpit Back (R) : ");
+		printVert(ArmpitPt_Back_R);
+	}
 
 	////////////////////  겨드랑앞접힘점 (R)
-	ArmpitFoldPt_Front_R = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Front_R->m_Pos[0], currLevel_R + 15, ArmpitFoldPt_Front_R->m_Pos[2]));
-	m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = ArmpitFoldPt_Front_R;
-	_cprintf("------- Modified Armpit Fold Front (R) : ");
-	printVert(ArmpitFoldPt_Front_R);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_R]) {
+		ArmpitFoldPt_Front_R = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Front_R->m_Pos[0], currLevel_R + 15, ArmpitFoldPt_Front_R->m_Pos[2]));
+		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_R] = ArmpitFoldPt_Front_R;
+		_cprintf("------- Modified Armpit Fold Front (R) : ");
+		printVert(ArmpitFoldPt_Front_R);
+	}
 
 	////////////////////  겨드랑뒤접힘점 (R)
-	ArmpitFoldPt_Back_R = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Back_R->m_Pos[0], currLevel_R + 20, ArmpitFoldPt_Back_R->m_Pos[2]));
-	m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = ArmpitFoldPt_Back_R;
-	_cprintf("------- Modified Armpit Fold Back (R) : ");
-	printVert(ArmpitFoldPt_Back_R);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_R]) {
+		ArmpitFoldPt_Back_R = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Back_R->m_Pos[0], currLevel_R + 20, ArmpitFoldPt_Back_R->m_Pos[2]));
+		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_R] = ArmpitFoldPt_Back_R;
+		_cprintf("------- Modified Armpit Fold Back (R) : ");
+		printVert(ArmpitFoldPt_Back_R);
+	}
 
 
 
 	////////////////////  겨드랑점 (L)
-	ArmpitPt_L = new EgVertex(ArmpitPt_L->m_Pos[0], currLevel_L, ArmpitPt_L->m_Pos[2]);
+	// 그냥 겨드랑점(R)이 수정될 경우에 같이 바꿔준다 (20. 12. 8)
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPIT]) {
+		// Mesh Vertex가 아니므로 그냥 좌표 값을 바꿔준다 (20. 12. 8)
+		// ArmpitPt_L = new EgVertex(ArmpitPt_L->m_Pos[0], currLevel_L, ArmpitPt_L->m_Pos[2]);
+		ArmpitPt_L->m_Pos[1] = currLevel_L;
+		m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_L] = ArmpitPt_L;
+		_cprintf("------- Modified Armpit (L) : ");
+		printVert(ArmpitPt_L);
 
-	m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_L] = ArmpitPt_L;
-	_cprintf("------- Modified Armpit (L) : ");
-	printVert(ArmpitPt_L);
+		////////////////////  겨드랑앞점 (L)
+		ArmpitPt_Front_L = FindClosestVert(pMesh, EgPos(ArmpitPt_Front_L->m_Pos[0], currLevel_L, ArmpitPt_Front_L->m_Pos[2]));
+		m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_L] = ArmpitPt_Front_L;
+		_cprintf("------- Modified Armpit Front (L) : ");
+		printVert(ArmpitPt_Front_L);
 
-	////////////////////  겨드랑앞점 (L)
-	ArmpitPt_Front_L = FindClosestVert(pMesh, EgPos(ArmpitPt_Front_L->m_Pos[0], currLevel_L, ArmpitPt_Front_L->m_Pos[2]));
-	m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_L] = ArmpitPt_Front_L;
-	_cprintf("------- Modified Armpit Front (L) : ");
-	printVert(ArmpitPt_Front_L);
-
-	////////////////////  겨드랑뒤점 (L)
-	ArmpitPt_Back_L = FindClosestVert(pMesh, EgPos(ArmpitPt_Back_L->m_Pos[0], currLevel_L, ArmpitPt_Back_L->m_Pos[2]));
-	m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_L] = ArmpitPt_Back_L;
-	_cprintf("------- Modified Armpit Back (L) : ");
-	printVert(ArmpitPt_Back_L);
+		////////////////////  겨드랑뒤점 (L)
+		ArmpitPt_Back_L = FindClosestVert(pMesh, EgPos(ArmpitPt_Back_L->m_Pos[0], currLevel_L, ArmpitPt_Back_L->m_Pos[2]));
+		m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_L] = ArmpitPt_Back_L;
+		_cprintf("------- Modified Armpit Back (L) : ");
+		printVert(ArmpitPt_Back_L);
+	}
 
 	////////////////////  겨드랑앞접힘점 (L)
-	ArmpitFoldPt_Front_L = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Front_L->m_Pos[0], currLevel_L + 15, ArmpitFoldPt_Front_L->m_Pos[2]));
-	m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = ArmpitFoldPt_Front_L;
-	_cprintf("------- Modified Armpit Fold Front (L) : ");
-	printVert(ArmpitFoldPt_Front_L);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_FRONT_L]) {
+		ArmpitFoldPt_Front_L = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Front_L->m_Pos[0], currLevel_L + 15, ArmpitFoldPt_Front_L->m_Pos[2]));
+		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_FRONT_L] = ArmpitFoldPt_Front_L;
+		_cprintf("------- Modified Armpit Fold Front (L) : ");
+		printVert(ArmpitFoldPt_Front_L);
+	}
 
 	////////////////////  겨드랑뒤접힘점 (L)
-	ArmpitFoldPt_Back_L = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Back_L->m_Pos[0], currLevel_L + 20, ArmpitFoldPt_Back_L->m_Pos[2]));
-	m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = ArmpitFoldPt_Back_L;
-	_cprintf("------- Modified Armpit Fold Back (L) : ");
-	printVert(ArmpitFoldPt_Back_L);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITFOLD_BACK_L]) {
+		ArmpitFoldPt_Back_L = FindClosestVert(pMesh, EgPos(ArmpitFoldPt_Back_L->m_Pos[0], currLevel_L + 20, ArmpitFoldPt_Back_L->m_Pos[2]));
+		m_LandmarkPose1[POSE1_LANDMARK_ARMPITFOLD_BACK_L] = ArmpitFoldPt_Back_L;
+		_cprintf("------- Modified Armpit Fold Back (L) : ");
+		printVert(ArmpitFoldPt_Back_L);
+	}
 }
+
 
 /////////////////////////////////////// 측정점::겨드랑앞벽점(R/L)
 /////////////////////////////////////// 측정점::겨드랑뒤벽점(R/L)
 // 마지막 수정일 : 2020. 7. 28
 void Pose1_FindArmpitWall(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_FRONT_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_FRONT_L]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_BACK_R]
+		&& !m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_BACK_L])
+		return;
+
 	EgVertex *ShoulderSidePt_R = m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_R],
 		*ShoulderSidePt_L = m_LandmarkPose1[POSE1_LANDMARK_SHOULDERSIDE_L],
 		*ArmpitPt_Front_R = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_R],
 		*ArmpitPt_Front_L = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_FRONT_L],
 		*ArmpitPt_Back_R = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_R],
 		*ArmpitPt_Back_L = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_ARMPIT_BACK_L];
+
+	EgVertex *ArmpitWallPt_Front_R = NULL,
+		*ArmpitWallPt_Front_L = NULL,
+		*ArmpitWallPt_Back_R = NULL,
+		*ArmpitWallPt_Back_L = NULL;
 
 	if (ShoulderSidePt_R == NULL 
 		|| ShoulderSidePt_L == NULL
@@ -2282,33 +2447,33 @@ void Pose1_FindArmpitWall(EgMesh *pMesh) {
 	}
 
 	// 어깨가쪽점과 겨드랑앞|뒤점의 중점에서부터 두 점 사이의 길이의 중점을 탐색
-	EgVertex *ArmpitWallPt_Front_R = new EgVertex(
+	EgPos pos_ArmpitWallPt_Front_R = EgPos(
 		(ShoulderSidePt_R->m_Pos[0] + ArmpitPt_Front_R->m_Pos[0]) / 2,
 		(ShoulderSidePt_R->m_Pos[1] + ArmpitPt_Front_R->m_Pos[1]) / 2,
 		(ShoulderSidePt_R->m_Pos[2] + ArmpitPt_Front_R->m_Pos[2]) / 2
 	),
-		*ArmpitWallPt_Front_L = new EgVertex(
+		pos_ArmpitWallPt_Front_L = EgPos(
 		(ShoulderSidePt_L->m_Pos[0] + ArmpitPt_Front_L->m_Pos[0]) / 2,
 			(ShoulderSidePt_L->m_Pos[1] + ArmpitPt_Front_L->m_Pos[1]) / 2,
 			(ShoulderSidePt_L->m_Pos[2] + ArmpitPt_Front_L->m_Pos[2]) / 2
 		),
-		*ArmpitWallPt_Back_R = new EgVertex(
+		pos_ArmpitWallPt_Back_R = EgPos(
 		(ShoulderSidePt_R->m_Pos[0] + ArmpitPt_Back_R->m_Pos[0]) / 2,
 			(ShoulderSidePt_R->m_Pos[1] + ArmpitPt_Back_R->m_Pos[1]) / 2,
 			(ShoulderSidePt_R->m_Pos[2] + ArmpitPt_Back_R->m_Pos[2]) / 2
 		),
-		*ArmpitWallPt_Back_L = new EgVertex(
+		pos_ArmpitWallPt_Back_L = EgPos(
 		(ShoulderSidePt_L->m_Pos[0] + ArmpitPt_Back_L->m_Pos[0]) / 2,
 			(ShoulderSidePt_L->m_Pos[1] + ArmpitPt_Back_L->m_Pos[1]) / 2,
 			(ShoulderSidePt_L->m_Pos[2] + ArmpitPt_Back_L->m_Pos[2]) / 2
 		);
 
 
-	EgLine rayFrontR = EgLine(ArmpitWallPt_Front_R->m_Pos, EgVec3(0, 0, -1));
-	EgLine rayFrontL = EgLine(ArmpitWallPt_Front_L->m_Pos, EgVec3(0, 0, -1));
+	EgLine rayFrontR = EgLine(pos_ArmpitWallPt_Front_R, EgVec3(0, 0, -1));
+	EgLine rayFrontL = EgLine(pos_ArmpitWallPt_Front_L, EgVec3(0, 0, -1));
 
-	EgLine rayBackR = EgLine(ArmpitWallPt_Back_R->m_Pos, EgVec3(0, 0, 1));
-	EgLine rayBackL = EgLine(ArmpitWallPt_Back_L->m_Pos, EgVec3(0, 0, 1));
+	EgLine rayBackR = EgLine(pos_ArmpitWallPt_Back_R, EgVec3(0, 0, 1));
+	EgLine rayBackL = EgLine(pos_ArmpitWallPt_Back_L, EgVec3(0, 0, 1));
 
 	EgPos tmpArmpitWallPt_Front_R, tmpArmpitWallPt_Front_L, tmpArmpitWallPt_Back_R, tmpArmpitWallPt_Back_L;
 	for (EgFace* face : pMesh->m_pFaces) {
@@ -2334,49 +2499,56 @@ void Pose1_FindArmpitWall(EgMesh *pMesh) {
 		}
 	}
 
-	ArmpitWallPt_Front_R = FindClosestVert(pMesh, tmpArmpitWallPt_Front_R);
-	ArmpitWallPt_Front_L = FindClosestVert(pMesh, tmpArmpitWallPt_Front_L);
-	ArmpitWallPt_Back_R = FindClosestVert(pMesh, tmpArmpitWallPt_Back_R);
-	ArmpitWallPt_Back_L = FindClosestVert(pMesh, tmpArmpitWallPt_Back_L);
-
-	if (ArmpitWallPt_Front_R != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_R] = ArmpitWallPt_Front_R;
-		_cprintf("Armpit Wall Pt Front (R) : ");
-		printVert(ArmpitWallPt_Front_R);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_R] = NULL;
-		_cprintf("Armpit Wall Pt Front (R) : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_FRONT_R]) {
+		ArmpitWallPt_Front_R = FindClosestVert(pMesh, tmpArmpitWallPt_Front_R);
+		if (ArmpitWallPt_Front_R != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_R] = ArmpitWallPt_Front_R;
+			_cprintf("Armpit Wall Pt Front (R) : ");
+			printVert(ArmpitWallPt_Front_R);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_R] = NULL;
+			_cprintf("Armpit Wall Pt Front (R) : NOT FOUND!\n");
+		}
 	}
 
-	if (ArmpitWallPt_Front_L != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_L] = ArmpitWallPt_Front_L;
-		_cprintf("Armpit Wall Pt Front (L) : ");
-		printVert(ArmpitWallPt_Front_L);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_L] = NULL;
-		_cprintf("Armpit Wall Pt Front (L) : NOT FOUND!\n");
-	}
-
-	if (ArmpitWallPt_Back_R != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_R] = ArmpitWallPt_Back_R;
-		_cprintf("Armpit Wall Pt Back (R) : ");
-		printVert(ArmpitWallPt_Back_R);
-	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_R] = NULL;
-		_cprintf("Armpit Wall Pt Back (R) : NOT FOUND!\n");
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_FRONT_L]) {
+		ArmpitWallPt_Front_L = FindClosestVert(pMesh, tmpArmpitWallPt_Front_L);
+		if (ArmpitWallPt_Front_L != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_L] = ArmpitWallPt_Front_L;
+			_cprintf("Armpit Wall Pt Front (L) : ");
+			printVert(ArmpitWallPt_Front_L);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_FRONT_L] = NULL;
+			_cprintf("Armpit Wall Pt Front (L) : NOT FOUND!\n");
+		}
 	}
 
-	if (ArmpitWallPt_Back_L != NULL) {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_L] = ArmpitWallPt_Back_L;
-		_cprintf("Armpit Wall Pt Back (L) : ");
-		printVert(ArmpitWallPt_Back_L);
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_BACK_R]) {
+		ArmpitWallPt_Back_R = FindClosestVert(pMesh, tmpArmpitWallPt_Back_R);
+		if (ArmpitWallPt_Back_R != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_R] = ArmpitWallPt_Back_R;
+			_cprintf("Armpit Wall Pt Back (R) : ");
+			printVert(ArmpitWallPt_Back_R);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_R] = NULL;
+			_cprintf("Armpit Wall Pt Back (R) : NOT FOUND!\n");
+		}
 	}
-	else {
-		m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_L] = NULL;
-		_cprintf("Armpit Wall Pt Back (L) : NOT FOUND!\n");
+
+	if (m_bFindLandmark[POSE1_LANDMARK_ARMPITWALL_BACK_L]) {
+		ArmpitWallPt_Back_L = FindClosestVert(pMesh, tmpArmpitWallPt_Back_L);
+		if (ArmpitWallPt_Back_L != NULL) {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_L] = ArmpitWallPt_Back_L;
+			_cprintf("Armpit Wall Pt Back (L) : ");
+			printVert(ArmpitWallPt_Back_L);
+		}
+		else {
+			m_LandmarkPose1[POSE1_LANDMARK_ARMPITWALL_BACK_L] = NULL;
+			_cprintf("Armpit Wall Pt Back (L) : NOT FOUND!\n");
+		}
 	}
 }
 
@@ -2384,6 +2556,9 @@ void Pose1_FindArmpitWall(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::젖가슴아래점
 // 마지막 수정일 : 2020. 9. 11
 void Pose1_FindUnderBustPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_UNDERBUST])
+		return;
+
 	EgVertex *UnderBustPt = NULL;
 	EgVertex *BustPt = m_LandmarkPose1[POSE1_LANDMARK_BP_R];
 
@@ -2417,6 +2592,9 @@ void Pose1_FindUnderBustPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::손끝점
 // 마지막 수정일 : 2020. 12. 3
 void Pose1_FindHandPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_HAND])
+		return;
+
 	EgVertex *NavelPt = m_LandmarkPose1[POSE1_LANDMARK_NAVEL],
 		*ArmpitPt = m_LandmarkPose1[POSE1_LANDMARK_ARMPIT];
 
@@ -2454,6 +2632,9 @@ void Pose1_FindHandPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::손목안쪽점
 // 마지막 수정일 : 2020. 10. 19
 void Pose1_FindWristPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_WRIST])
+		return;
+
 	EgVertex *WristPt = NULL;
 	EgVertex *HandPt = m_LandmarkPose1[POSE1_LANDMARK_HAND],
 		*ArmpitPt = m_LandmarkPose1[POSE1_LANDMARK_ARMPIT];
@@ -2521,6 +2702,9 @@ void Pose1_FindWristPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::노뼈위점
 // 마지막 수정일 : 2020. 10. 19
 void Pose1_FindElbowPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_ELBOW])
+		return;
+
 	EgVertex *ElbowPt = NULL;
 	EgVertex *WristPt = m_LandmarkPose1[POSE1_LANDMARK_WRIST],
 		*ArmpitPt = m_LandmarkPose1[POSE1_LANDMARK_ARMPIT];
@@ -2563,6 +2747,9 @@ void Pose1_FindElbowPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::눈초리점
 // 마지막 수정일 : 2020. 10. 12
 void Pose1_FindEyePt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_EYE])
+		return;
+
 	EgVertex *EyePt = NULL;
 	EgVertex *TopHeadPt = m_LandmarkPose1[POSE1_LANDMARK_TOPHEAD],
 		*NosePt = m_LandmarkHelpPose1[POSE1_LANDMARK_HELP_NOSE];
@@ -2598,6 +2785,9 @@ void Pose1_FindEyePt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::미드리프점
 // 마지막 수정일 : 2020. 9. 17
 void Pose1_FindMidRiffPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_MIDRIFF])
+		return;
+
 	EgVertex *MidRiffPt = NULL;
 	// 젖가슴아래와 허리둘레수준 중간
 	EgVertex *UnderBustPt = m_LandmarkPose1[POSE1_LANDMARK_UNDERBUST],
@@ -2627,6 +2817,9 @@ void Pose1_FindMidRiffPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::Top hip점
 // 마지막 수정일 : 2020. 9. 17
 void Pose1_FindTopHipPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_TOPHIP])
+		return;
+
 	EgVertex *TopHipPt = NULL;
 	// 허리둘레수준과 엉덩이돌출수준의 중간
 	EgVertex *WaistPt = m_LandmarkPose1[POSE1_LANDMARK_WAIST],
@@ -2656,6 +2849,9 @@ void Pose1_FindTopHipPt(EgMesh *pMesh) {
 /////////////////////////////////////// 측정점::Upper hip점
 // 마지막 수정일 : 2020. 9. 17
 void Pose1_FindUpperHipPt(EgMesh *pMesh) {
+	if (!m_bFindLandmark[POSE1_LANDMARK_UPPERHIP])
+		return;
+
 	EgVertex *UpperHipPt = NULL;
 	// Top-hip수준과 허리둘레수준의 중간
 	EgVertex *TopHipPt = m_LandmarkPose1[POSE1_LANDMARK_TOPHIP],
@@ -2720,3 +2916,4 @@ void Pose1_FindBackExtrudePt(EgMesh *pMesh) {
 	}
 }
 
+/********************************************************************************************************************/

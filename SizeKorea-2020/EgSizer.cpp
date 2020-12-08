@@ -10,12 +10,13 @@ float m_MinX = INFINITY, m_MaxX = -INFINITY;
 float m_MinY = INFINITY, m_MaxY = -INFINITY;
 float m_MinZ = INFINITY, m_MaxZ = -INFINITY;
 
-// mj::Pose 1
+//////////////////// mj::Pose 1
 extern EgVertex* m_LandmarkPose1[LANDMARK_NUM_POSE1];
 extern EgVertex* m_LandmarkHelpPose1[LANDMARK_HELP_NUM_POSE1];
-/////////////
 
-// mj::Pose 2
+////////////////////////////////
+
+//////////////////// mj::Pose 2
 #include "Pose2Landmarks.h"
 #include "Pose2Measures.h"
 
@@ -25,7 +26,12 @@ extern REAL m_nResultPose2[NEW_RESULT_NUM_POSE2];
 extern BOOL m_nResultPathViewPose2[NEW_RESULT_NUM_POSE2];
 
 extern std::vector<EgPos> m_nResultPathPose2[NEW_RESULT_NUM_POSE2];
-/////////////
+////////////////////////////////
+
+
+// mj :: 자세1, 자세2 수동 측정점 참조 여부 변수 (20. 12. 8)
+std::vector<bool> m_bFindLandmark;
+
 
 extern std::vector<std::string> LandmarkPose1;
 extern std::vector<std::string> LandmarkPose2;
@@ -38,7 +44,6 @@ extern std::vector<std::string> ResultPose3;
 extern std::vector<std::string> ResultPose4;
 extern std::vector<std::string> ResultPose5;
 extern EgSlicer theSlicer;
-
 
 bool sortPointByX(EgPos a, EgPos b);
 bool sortPointByY(EgPos a, EgPos b);
@@ -153,6 +158,7 @@ void EgSizer::Init(int PoseId, EgMesh *pMesh)
 	{
 		int NumLandmarks = LANDMARK_NUM_POSE1;
 		m_Landmarks.assign(NumLandmarks, NULL);
+		m_bFindLandmark.assign(NumLandmarks, true);
 
 		int NumResults = RESULT_NUM_POSE1;
 		m_Results.assign(NumResults, 0.0);
@@ -164,6 +170,7 @@ void EgSizer::Init(int PoseId, EgMesh *pMesh)
 	if (PoseId == 2) {
 		int NumLandmarks = NEW_LANDMARK_NUM_POSE2;
 		m_Landmarks.assign(NumLandmarks, NULL);
+		m_bFindLandmark.assign(NumLandmarks, true);
 
 		int NumResults = NEW_RESULT_NUM_POSE2;
 		m_Results.assign(NumResults, 0.0);
@@ -245,7 +252,16 @@ void EgSizer::UpdateLandmark(EgPos pos)
 	EgVertex *v = FindClosestVert(m_pMesh, pos);
 	m_Landmarks[m_SltLandmarkIdx] = v;
 
-	if (m_PoseId == 2) {
+	// mj :: 자동 측정 제외
+	m_bFindLandmark[m_SltLandmarkIdx] = false;
+
+
+	// mj :: 자세1도 수동 측정점은 제외하고 Find Landmark할 경우가 생겨서 Global varibale 업데이트 필요 (20. 12. 8)
+	if (m_PoseId == 1) {
+		m_LandmarkPose1[m_SltLandmarkIdx] = v;
+	}
+	// mj :: 자세2는 EgSizer의 m_Landmarks 말고도 Doc에서 처리하기 때문에 필요 (20. 12. 8)
+	else if (m_PoseId == 2) {
 		m_nLandmarkPose2[m_SltLandmarkIdx] = v;
 	}
 }
@@ -334,6 +350,8 @@ void EgSizer::FindLandmarkPose1()
 	///////////////////////////////////////  측정점::머리마루점 
 	Pose1_FindTopHeadPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(1);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("머리마루점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	///////////////////////////////////////  Make sagittal/coronal plane
 	Pose1_MakeSilhouette(m_pMesh);
@@ -346,22 +364,30 @@ void EgSizer::FindLandmarkPose1()
 	/////////////////////////////////////// 보조점::겨드랑뒤점
 	Pose1_FindArmpitPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(2);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("겨드랑점, 겨드랑앞/뒤점, 겨드랑앞/뒤접힘점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 측정점::어깨점(R/L)
 	/////////////////////////////////////// 측정점::어깨가쪽점(R/L)
 	Pose1_FindShoulderPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(3);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("어깨점, 어깨가쪽점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	
 
 	/////////////////////////////////////// 측정점::목옆점 
 	Pose1_FindSideNeckPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(4);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("목옆점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	///////////////////////////////////////  측정점::목앞점
 	Pose1_FindFneckPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(5);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("목앞점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 보조점::코끝점
@@ -371,24 +397,34 @@ void EgSizer::FindLandmarkPose1()
 	/////////////////////////////////////// 측정점::턱끝점
 	Pose1_FindJawPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(6);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("턱끝점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::엉덩이돌출점
 	/////////////////////////////////////// 측정점::장딴지돌출점
 	Pose1_FindHipnCalfExtrudePt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(7);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("엉덩이돌출점, 장딴지돌출점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 측정점::볼기고랑점
 	Pose1_FindUnderHipPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(8);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("볼기고랑점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 측정점::배꼽점(앞/뒤)
 	Pose1_FindNavelPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(9);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("배꼽점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 측정점::배돌출점
 	Pose1_FindStomachExtrudePt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(10);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("배돌출점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::무릎뼈가운데점
@@ -396,16 +432,22 @@ void EgSizer::FindLandmarkPose1()
 	/////////////////////////////////////// 측정점::오금점
 	Pose1_FindKneePt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(11);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("무릎뼈가운데점, 정강뼈위점, 오금점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::샅점
 	Pose1_FindCrotchPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(12);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("샅점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::목뒤점
 	Pose1_FindBackNeckPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(13);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("목뒤점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::허리(옆)점
@@ -413,16 +455,22 @@ void EgSizer::FindLandmarkPose1()
 	/////////////////////////////////////// 측정점::허리뒤점
 	Pose1_FindWaistPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(15);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("허리옆점, 허리앞/뒤점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::가쪽복사점
 	Pose1_FindAnklePt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(16);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("가쪽복사점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::젖꼭지점(R/L)
 	Pose1_FindBustPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(18);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("젖꼭지점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::겨드랑점들 수정
@@ -433,45 +481,63 @@ void EgSizer::FindLandmarkPose1()
 	/////////////////////////////////////// 측정점::겨드랑뒤벽점(R/L)
 	Pose1_FindArmpitWall(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(22);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("겨드랑앞/뒤벽점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::젖가슴아래점
 	Pose1_FindUnderBustPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(24);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("젖가슴아래점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::손끝점
 	Pose1_FindHandPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(25);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("손끝점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 측정점::손목안쪽점
 	Pose1_FindWristPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(26);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("손목안쪽점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::노뼈위점
 	Pose1_FindElbowPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(28);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("노뼈위점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::눈초리점
 	Pose1_FindEyePt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(30);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("눈초리점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::미드리프점
 	Pose1_FindMidRiffPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(31);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("미드리프점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::Top hip점
 	Pose1_FindTopHipPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(32);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("Top-hip점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 
 	/////////////////////////////////////// 측정점::Upper hip점
 	Pose1_FindUpperHipPt(m_pMesh);
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(33);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("Upper-hip점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 
 	/////////////////////////////////////// 보조점::등돌출점
 	Pose1_FindBackExtrudePt(m_pMesh);
@@ -480,8 +546,6 @@ void EgSizer::FindLandmarkPose1()
 
 	for (int i = 0; i < LANDMARK_NUM_POSE1; i++) {
 		m_Landmarks[i] = m_LandmarkPose1[i];
-
-		// _cprintf("%d: %f %f %f\n", i, m_Landmarks[i]->m_Pos[0], m_Landmarks[i]->m_Pos[1], m_Landmarks[i]->m_Pos[2]);
 	}
 }
 
