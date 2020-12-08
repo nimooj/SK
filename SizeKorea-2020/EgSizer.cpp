@@ -123,6 +123,16 @@ EgSizer::~EgSizer()
 {
 	if (m_pArrowMesh != NULL)
 		delete m_pArrowMesh;
+
+	if (m_PoseId == 1) {
+		// mj::m_LandmarkPose1 해제 (20. 12. 3)
+		delete[] m_LandmarkPose1;
+		delete[] m_LandmarkHelpPose1;
+	}
+	else if (m_PoseId == 2) {
+		// mj::m_nLandmarkPose2 해제 (20. 12. 3)
+		delete[] m_nLandmarkPose2;
+	}
 }
 
 /*!
@@ -148,6 +158,7 @@ void EgSizer::Init(int PoseId, EgMesh *pMesh)
 		m_Results.assign(NumResults, 0.0);
 		m_Paths.assign(NumResults, std::vector<EgPos>());
 		m_bShowPaths.assign(NumResults, true);
+
 	}
 
 	if (PoseId == 2) {
@@ -158,6 +169,7 @@ void EgSizer::Init(int PoseId, EgMesh *pMesh)
 		m_Results.assign(NumResults, 0.0);
 		m_Paths.assign(NumResults, std::vector<EgPos>());
 		m_bShowPaths.assign(NumResults, true);
+
 	}
 
 

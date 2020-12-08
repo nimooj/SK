@@ -224,8 +224,7 @@ public: // ¸â¹ö ÇÔ¼ö
 	// Aligned data variable and it's size.
 
 	GObList<GVector3f>  *m_pAlignedPointsV_X,
-		*m_pAlignedPointsV_Y,
-		*m_pAlignedPointsV_Z;
+		*m_pAlignedPointsV_Y;
 
 	int	m_nCount_X,
 		m_nCount_Y,

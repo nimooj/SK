@@ -2596,40 +2596,6 @@ int CSizeKorea2020Doc::GetNumberOfSizes() {
 	else
 		return 0;
 }
-//
-//void CSizeKorea2020Doc::GetLandMark(int i, float* xyz, char* name) {
-//	if (m_bLandmarkFind)
-//	{
-//		if (i < m_LandmarkNumExport) {
-//			xyz[0] = m_LandMarkPose2[i][0] + m_MinXOrigin;
-//			xyz[1] = m_LandMarkPose2[i][1] + m_MinYOrigin;
-//			xyz[2] = m_LandMarkPose2[i][2];
-//			strcpy(name, m_LandMarkName[i]);
-//		}
-//		else {
-//			xyz[0] = -1.0f;
-//			xyz[1] = -1.0f;
-//			xyz[2] = -1.0f;
-//			strcpy(name, "");
-//		}
-//	}
-//	else {
-//		xyz[0] = -1.0f;
-//		xyz[1] = -1.0f;
-//		xyz[2] = -1.0f;
-//		strcpy(name, "");
-//	}
-//}
-
-//void CSizeKorea2020Doc::GetSize(int i, float* size, char* name) {
-//	if (m_bSizeResult) {
-//		*size = m_ResultPose2[i];
-//		strcpy(name, m_SizeName[i]);
-//	}
-//	else
-//		size = 0;
-//}
-
 
 void CSizeKorea2020Doc::MeasureBody() {
 	if (m_bOpened) {
@@ -3057,9 +3023,6 @@ void CSizeKorea2020Doc::FindPose2Landmarks() {
 
 	m_nLandmarkPose2[POSE2_LANDMARK_UNDERCALF] = FindClosestVert(m_ScanMesh, EgPos(m_LandMarkPose2[29].X, m_LandMarkPose2[29].Y, m_LandMarkPose2[29].Z));
 
-	// 위치 이상으로 가쪽복사점 새로 찾는다 (20. 10. 4) 
-	// Undercalf를 사용하므로 여기로 위치 이동
-	m_nLandmarkPose2[POSE2_LANDMARK_ANKLE] = FindAnklePt();
 
 
 	// 새로 추가된 측정점
@@ -3070,9 +3033,11 @@ void CSizeKorea2020Doc::FindPose2Landmarks() {
 	m_nLandmarkPose2[POSE2_LANDMARK_THIGH_MID] = FindThighMidPt();
 	m_nLandmarkPose2[POSE2_LANDMARK_UNDERKNEE] = FindUnderkneePt();
 	m_nLandmarkPose2[POSE2_LANDMARK_CALF_EXTRUDE_FRONT] = FindCalfExtrudeFrontPt();
+	m_nLandmarkPose2[POSE2_LANDMARK_ANKLE] = FindAnklePt();
 	m_nLandmarkPose2[POSE2_LANDMARK_ANKLE_INSIDE] = FindAnkleInsidePt();
 	m_nLandmarkPose2[POSE2_LANDMARK_SHOULDER_R] = FindShoulderRPt();
 	m_nLandmarkPose2[POSE2_LANDMARK_SHOULDER_L] = FindShoulderLPt();
+
 
 
 	// 샅점이 뒤에 찍혀서 측정부위(샅앞길이, 샅뒤길이)에 문제가 생기므로 샅점을 자세 1과 같은 방법으로 구한다 (20. 9. 26)
@@ -3085,25 +3050,46 @@ void CSizeKorea2020Doc::FindPose2Landmarks() {
 ///////////////////////////////////////////////
 //			mj::New Landmarks(2020. 8)		 //
 ///////////////////////////////////////////////
-// 마지막 수정일 : 2020. 11. 23
+// 마지막 수정일 : 2020. 12. 3
 EgVertex *CSizeKorea2020Doc::FindAnklePt() {
 	EgVertex *AnklePt = NULL;
 
-	// 종아리 아래점 수준에서 slice해서 최소 x값을 가진 점을 seed point로
-	EgSlicer theSlicer;
-	theSlicer.Slice(m_ScanMesh, 1, m_nLandmarkPose2[POSE2_LANDMARK_UNDERCALF]->m_Pos[1] / m_MaxY, -1, 0, -1, 0, -1, 1, true);
+	// 10mm 단위로 내려가면서 찾는다 
+	EgSlicer ankleSlicer;
+	float lowerAnkleLevel = m_MaxY * 0.02;
 
+	EgVertex *CalfExtrudePt = m_nLandmarkPose2[POSE2_LANDMARK_CALF_EXTRUDE];
+
+	float minCirc = INFINITY;
+	float startLvl = (m_MinY + CalfExtrudePt->m_Pos[1]) / 2;
+	float minCircLvl = startLvl;
+
+	for (float level = startLvl; level > lowerAnkleLevel; level -= 10.0) {
+		ankleSlicer.Slice(m_ScanMesh, 1, level / m_MaxY, -1, 0, -1, 0, -1, 1, true);
+
+		float thisCirc = ankleSlicer.GetLength(0);
+
+		if (thisCirc < minCirc) {
+			minCirc = thisCirc;
+			minCircLvl = level;
+		}
+	}
+
+	ankleSlicer.Slice(m_ScanMesh, 1, minCircLvl / m_MaxY, -1, 0, -1, 0, -1, 1, true);
+
+	// 최소 x값을 갖는 점
 	EgPos minX = EgPos(INFINITY, 0, 0);
-	for (EgPos pos : theSlicer.m_CutLines[0]) {
+	for (EgPos pos : ankleSlicer.m_CutLines[0]) {
 		if (pos.m_Coords[0] < minX.m_Coords[0]) {
 			minX = pos;
 		}
 	}
 
-	// 3cm 근방에서 elliptic한 점
-	AnklePt = SK_Elliptic_Vertex(FindClosestVert(m_ScanMesh, minX), 30);
+	AnklePt = FindClosestVert(m_ScanMesh, minX);
 
 	if (AnklePt != NULL) {
+		AnklePt = SK_Elliptic_Vertex(AnklePt, 30);
+
 		m_nLandmarkPose2[POSE2_LANDMARK_ANKLE] = AnklePt;
 	}
 	else {
@@ -3430,7 +3416,7 @@ EgVertex* CSizeKorea2020Doc::FindAnkleInsidePt()
 			}
 		}
 	}
-	AnkleInsidePt = SK_Elliptic_Vertex(FindClosestVert(m_ScanMesh, AnkleInsideSeed), 10);
+	AnkleInsidePt = SK_Elliptic_Vertex(FindClosestVert(m_ScanMesh, AnkleInsideSeed), 30);
 
 	return AnkleInsidePt;
 }
@@ -5720,6 +5706,9 @@ void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 	GVector3f FNv, p0, p1;
 	REAL min = PathCrv.GetMinKnotVal();
 	REAL max = PathCrv.GetMaxKnotVal();
+
+	std::vector<EgPos> fneckCurv;
+
 	for (int i = 0; i < snum; i++)
 	{
 		REAL u0 = min + ((max - min)*i) / (REAL)(snum);
@@ -5734,6 +5723,9 @@ void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 		m_FNeckCrv.Insert(p0);
 		m_FNeckCrv.Insert(p1);
 
+		fneckCurv.push_back(EgPos(p0[0], p0[1], p0[2]));
+		fneckCurv.push_back(EgPos(p1[0], p1[1], p1[2]));
+
 		float dis = (FNeckPt.X - v0[0])*(FNeckPt.X - v1[0]);
 		if (dis < 0.0f) {
 			GVector3f a = p0 * 0.5f;
@@ -5746,8 +5738,9 @@ void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 
 	//	m_LandMarkPose2[8] = FNv;
 
-	GObList<GVector3f> CrossPtList;
+	GetView()->SetPoint(fneckCurv);
 
+	GObList<GVector3f> CrossPtList;
 
 	GPlane cutPln;  //GVector3f(FNv) 임시목앞점을 지나는 YZ평면(정중시상면)
 	cutPln.MakePlane(GVector3f(1.0, 0.0, 0.0), m_LandMarkHelp[11]);

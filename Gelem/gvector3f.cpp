@@ -90,14 +90,15 @@ GVector3f& GVector3f::operator = (const GVector3f &v) {
 	Z = v.Z;
 	return *this;
 }
-GVector3f GVector3f::operator + (const GVector3f &v) {
-	GVector3f* retVal = new GVector3f(X + v.X, Y + v.Y, Z + v.Z);
-	return *retVal;
+
+GVector3f GVector3f::operator + (const GVector3f &v)
+{
+	return GVector3f(X + v.X, Y + v.Y, Z + v.Z);
 }
 
-GVector3f GVector3f::operator - (const GVector3f &v) {
-	GVector3f* retVal = new GVector3f(X - v.X, Y - v.Y, Z - v.Z);
-	return *retVal;
+GVector3f GVector3f::operator - (const GVector3f &v)
+{
+	return GVector3f(X - v.X, Y - v.Y, Z - v.Z);
 }
 
 GVector3f GVector3f::operator * (REAL scale) {

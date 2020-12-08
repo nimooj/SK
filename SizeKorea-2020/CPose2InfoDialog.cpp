@@ -172,13 +172,11 @@ void CPose2InfoDialog::OnBnClickedPose2Mark4()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, 0.0, 0.0, 1.0);
-
-	pView->m_OffSet[0] = -440.543488;
-	pView->m_OffSet[1] = -1373.933594;
-	pView->m_OffSet[2] = 0.000;
-
-	pView->m_TrackBallCenter[2] = -692.201416;
+	pView->m_TrackBall.quat.SetQuat(0.223501, 0.662542, 0.217432, 0.681035);
+	pView->m_OffSet[0] = -152.224762;
+	pView->m_OffSet[1] = -1372.032959;
+	pView->m_OffSet[2] = -119.502441;
+	pView->m_TrackBallCenter[2] = -815.390320;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK4;
@@ -197,13 +195,13 @@ void CPose2InfoDialog::OnBnClickedPose2Mark5()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, 0.0, 0.0, 1.0);
+	pView->m_TrackBall.quat.SetQuat(0.214546, -0.639323, -0.234920, 0.700035);
 
-	pView->m_OffSet[0] = -545.336670;
-	pView->m_OffSet[1] = -1373.006226;
-	pView->m_OffSet[2] = 0.000;
+	pView->m_OffSet[0] = -150.906799;
+	pView->m_OffSet[1] = -1373.775391;
+	pView->m_OffSet[2] = -111.855530;
 
-	pView->m_TrackBallCenter[2] = -692.201416;
+	pView->m_TrackBallCenter[2] = -815.390320;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK5;
@@ -247,13 +245,11 @@ void CPose2InfoDialog::OnBnClickedPose2Mark7()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, 0.707107, 0.0, 0.707107);
-
-	pView->m_OffSet[0] = -315.348114;
-	pView->m_OffSet[1] = -1314.582031;
-	pView->m_OffSet[2] = -118.703911;
-
-	pView->m_TrackBallCenter[2] = -692.201416;
+	pView->m_TrackBall.quat.SetQuat(0.229500, 0.668827, 0.229500, 0.668827);
+	pView->m_OffSet[0] = -355.980316;
+	pView->m_OffSet[1] = -1125.872437;
+	pView->m_OffSet[2] = -109.812477;
+	pView->m_TrackBallCenter[2] = -1909.782959;
 
 
 	pView->Invalidate(false);
@@ -273,13 +269,12 @@ void CPose2InfoDialog::OnBnClickedPose2Mark8()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, -0.707107, 0.0, 0.707107);
+	pView->m_TrackBall.quat.SetQuat(0.324070, -0.628473, -0.324070, 0.628473);
+	pView->m_OffSet[0] = -355.980316;
+	pView->m_OffSet[1] = -1125.872437;
+	pView->m_OffSet[2] = -109.812477;
+	pView->m_TrackBallCenter[2] = -1909.782959;
 
-	pView->m_OffSet[0] = -315.348114;
-	pView->m_OffSet[1] = -1314.582031;
-	pView->m_OffSet[2] = -110.703911;
-
-	pView->m_TrackBallCenter[2] = -692.201416;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK8;
@@ -811,13 +806,13 @@ void CPose2InfoDialog::OnBnClickedPose2Mark33()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, 0.0, 0.0, 1.0);
+	pView->m_TrackBall.quat.SetQuat(0.144407, -0.387362, -0.061574, 0.908464);
 
-	pView->m_OffSet[0] = -496.090485;
-	pView->m_OffSet[1] = -110.795418;
-	pView->m_OffSet[2] = -69.553040;
+	pView->m_OffSet[0] = -476.421234;
+	pView->m_OffSet[1] = -107.682487;
+	pView->m_OffSet[2] = -91.520447;
 
-	pView->m_TrackBallCenter[2] = -642.503540;
+	pView->m_TrackBallCenter[2] = -1032.949829;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK33;
@@ -1141,14 +1136,11 @@ void CPose2InfoDialog::OnBnClickedPose2Mark41()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, 0.707107, 0.0, 0.707107);
-
-	pView->m_OffSet[0] = -456.378326;
-	pView->m_OffSet[1] = -1316.518921;
-	pView->m_OffSet[2] = -117.851936;
-
-	pView->m_TrackBallCenter[2] = -915.013550;
-
+	pView->m_TrackBall.quat.SetQuat(0.229500, 0.668827, 0.229500, 0.668827);
+	pView->m_OffSet[0] = -355.980316;
+	pView->m_OffSet[1] = -1125.872437;
+	pView->m_OffSet[2] = -109.812477;
+	pView->m_TrackBallCenter[2] = -1909.782959;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK41;
@@ -1167,13 +1159,11 @@ void CPose2InfoDialog::OnBnClickedPose2Mark44()
 	m_Pose2MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.0, -0.707107, 0.0, 0.707107);
-
-	pView->m_OffSet[0] = -456.378326;
-	pView->m_OffSet[1] = -1316.518921;
-	pView->m_OffSet[2] = -117.851936;
-
-	pView->m_TrackBallCenter[2] = -915.013550;
+	pView->m_TrackBall.quat.SetQuat(0.324070, -0.628473, -0.324070, 0.628473);
+	pView->m_OffSet[0] = -355.980316;
+	pView->m_OffSet[1] = -1125.872437;
+	pView->m_OffSet[2] = -109.812477;
+	pView->m_TrackBallCenter[2] = -1909.782959;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE2_MARK44;

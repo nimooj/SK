@@ -1072,11 +1072,6 @@ void CSizeKorea2020View::DrawEgPoint() {
 
 	for (int i = 0; i < points.size(); i++) {
 		glColor3f(0, 0, 1);
-		/*
-		glPointSize(4.0);
-		glVertex3f(points[i].m_Coords[0], points[i].m_Coords[1], points[i].m_Coords[2]);
-		glVertex(pt0.m_Coords[0], pt0.m_Coords[1], pt0.m_Coords[2]);
-		*/
 		glPushMatrix();
 		glTranslatef(points[i].m_Coords[0], points[i].m_Coords[1], points[i].m_Coords[2]);
 		gluSphere(gluNewQuadric(), 2.0f, 10.0f, 10.f);
@@ -1102,34 +1097,7 @@ void CSizeKorea2020View::DrawLine() {
 
 void CSizeKorea2020View::DrawSilhouette() {
 	CSizeKorea2020Doc* pDoc = GetDocument();
-	/*
-	std::vector<EgPos> silhouette; 
-	if (m_bShowFSilhouette)
-		silhouette = pDoc->m_SagittalPoints_Front;
 
-	if (m_bShowRSilhouette)
-		silhouette = pDoc->m_CoronalPoints_Right;
-
-	// Red Landmarks
-	m_fMatR = 1.0f;
-	m_fMatG = 0.0f;
-	m_fMatB = 0.0f;
-	SetMaterial();
-
-
-	for (int i = 0; i < silhouette.size(); i++)
-	{
-		EgPos pt = silhouette[i];
-
-		if (pt == EgPos(0.0, 0.0, 0.0))
-			continue;
-
-		glPushMatrix();
-		glTranslatef(pt[0], pt[1], pt[2]);
-		gluSphere(gluNewQuadric(), 2.0f, 10.0f, 10.f);
-		glPopMatrix();
-	}
-	*/
 }
 
 void CSizeKorea2020View::DrawLandMarks() {

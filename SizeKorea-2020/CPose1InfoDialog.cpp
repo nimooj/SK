@@ -391,11 +391,11 @@ void CPose1InfoDialog::OnBnClickedPose1Mark15()
 	m_Pose1MarkCoords.Format("(%.1lf, %.1lf, %.1lf)", p[0], p[1], p[2]);
 	UpdateData(false);
 
-	pView->m_TrackBall.quat.SetQuat(0.000000, 0.000000, 0.000000, 1.000000);
-	pView->m_OffSet[0] = -118.229767;
-	pView->m_OffSet[1] = -1059.596069;
-	pView->m_OffSet[2] = 21.0;
-	pView->m_TrackBallCenter[2] = -643.078064;
+	pView->m_TrackBall.quat.SetQuat(0.000000, 0.329502, 0.000000, 0.944155);
+	pView->m_OffSet[0] = -186.544342;
+	pView->m_OffSet[1] = -1081.758179;
+	pView->m_OffSet[2] = -33.295174;
+	pView->m_TrackBallCenter[2] = -1033.873535;
 
 	pView->Invalidate(false);
 	m_SltButtonId = IDC_POSE1_MARK15;
@@ -624,8 +624,8 @@ void CPose1InfoDialog::OnBnClickedPose1Mark26()
 
 	pView->m_TrackBall.quat.SetQuat(0.000000, 0.707107, 0.000000, 0.707107);
 	pView->m_OffSet[0] = -80.371109;
-	pView->m_OffSet[1] = -788.915894;
-	pView->m_OffSet[2] = 21.0;
+	pView->m_OffSet[1] = -836.650513;
+	pView->m_OffSet[2] = -132.945038;
 	pView->m_TrackBallCenter[2] = -890.745361;
 
 	pView->Invalidate(false);

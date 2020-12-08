@@ -1,3 +1,8 @@
-﻿  GelemDLL.vcxproj -> E:\nimooj\Project\SizeKorea-2020-1103\Win32\Release\GElem.lib
-  하위 디렉터리 또는 파일 E:\nimooj\Project\SizeKorea-2020-1103\usr\lib\Win32\Release\이(가) 이미 있습니다.
+﻿  pch.cpp
+  gplane.cpp
+  gquaternion.cpp
+  gtrackball.cpp
+  gvector3f.cpp
+  GelemDLL.vcxproj -> E:\nimooj\Project\SizeKorea-2020\Win32\Release\GElem.lib
+  하위 디렉터리 또는 파일 E:\nimooj\Project\SizeKorea-2020\usr\lib\Win32\Release\이(가) 이미 있습니다.
           1개 파일을 이동했습니다.
