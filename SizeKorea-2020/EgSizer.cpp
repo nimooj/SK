@@ -1545,14 +1545,14 @@ void EgSizer::FindLandmarkPose3()
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	int idx = GetLandmarkIdx("엉덩이돌출점");
 	m_Landmarks[idx] = SK_Pose3_Buttock_Protrusion(m_pMesh);
-	
+
 	// 2. 배돌출점
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(2);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("배돌출점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("배돌출점");
 	m_Landmarks[idx] = SK_Pose3_Abdominal_Protrusion(m_pMesh);
-	
+
 	// 3. 엉덩이최대둘레수준점
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(3);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("엉덩이최대둘레수준점 찾는 중..."));
@@ -1560,49 +1560,49 @@ void EgSizer::FindLandmarkPose3()
 	idx = GetLandmarkIdx("엉덩이최대둘레수준점");
 	std::vector<EgPos> Path;
 	m_Landmarks[idx] = SK_Pose3_Buttock_Max_Perimeter(m_pMesh, Path);
-	
+
 	// 4. 주먹가운데점(왼쪽)
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(4);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("왼쪽주먹가운데점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("왼쪽주먹가운데점");
 	m_Landmarks[idx] = SK_Pose3_Left_Fist_Center(m_pMesh);
-	
+
 	// 4. 주먹가운데점(오른쪽)
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(5);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("오른쪽주먹가운데점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("오른쪽주먹가운데점");
 	m_Landmarks[idx] = SK_Pose3_Right_Fist_Center(m_pMesh);
-	
+
 	// 5. 오른쪽 등부위돌출점
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(6);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("오른쪽등부위돌출점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("오른쪽등부위돌출점");
 	m_Landmarks[idx] = SK_Pose3_Right_Back_Protrusion(m_pMesh);
-	
-	// 6. 팔꿈치아래점
+
+	// 6. 팔꿈치뒤점
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(7);
-	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("왼쪽팔꿈치아래점 찾는 중..."));
-	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
-	idx = GetLandmarkIdx("왼쪽팔꿈치아래점");
-	m_Landmarks[idx] = SK_Pose3_Bottom_Olecranon(m_pMesh);
-	
-	// 7. 팔꿈치뒤점
-	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(8);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("왼쪽팔꿈치뒤점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("왼쪽팔꿈치뒤점");
 	m_Landmarks[idx] = SK_Pose3_Rear_Olecranon(m_pMesh);
-	
+
+	// 7. 팔꿈치아래점
+	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(8);
+	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("왼쪽팔꿈치아래점 찾는 중..."));
+	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
+	idx = GetLandmarkIdx("왼쪽팔꿈치아래점");
+	m_Landmarks[idx] = SK_Pose3_Bottom_Olecranon(m_pMesh);
+
 	// 8. 오른쪽 어깨점
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(9);
 	pFrame->m_pLandmarkProgressDlg->m_Status.Format("%s", _T("오른쪽어깨점 찾는 중..."));
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);
 	idx = GetLandmarkIdx("오른쪽어깨점");
 	m_Landmarks[idx] = SK_Pose3_Right_Acromion(m_pMesh);
-	
+
 	// 상태 진행 창을 초기화 한다.
 	pFrame->m_pLandmarkProgressDlg->m_LandmarkProgress.SetPos(0);
 	pFrame->m_pLandmarkProgressDlg->UpdateData(FALSE);

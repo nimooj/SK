@@ -12255,7 +12255,21 @@ void CSizeKorea2020Doc::OnModelLandmarkSave()
 
 void CSizeKorea2020Doc::OnFindLandmark()
 {
-	// TODO: Add your command handler code here
+	if (m_ScanMesh == NULL)
+	{
+		AfxMessageBox("스캔 모델을 불러오세요.");
+		return;
+	}
+	if (m_ScanMesh->m_BndBox.GetDiagonal() < 500.0)
+	{
+		AfxMessageBox("스캔 모델의 크기를 편집하세요.");
+		return;
+	}
+	if (m_ScanMesh->m_BndBox.m_MinPt != EgPos(0.0, 0.0, 0.0))
+	{
+		AfxMessageBox("스캔 모델의 위치를 정렬하세요.");
+		return;
+	}
 	if (!m_bArrangedXY)
 		OnArrange3DData();
 
@@ -12268,7 +12282,17 @@ void CSizeKorea2020Doc::OnFindLandmark()
 
 void CSizeKorea2020Doc::OnMeasure()
 {
-	// TODO: Add your command handler code here
+	if (m_ScanMesh == NULL)
+	{
+		AfxMessageBox("스캔 모델을 불러오세요.");
+		return;
+	}
+	if (m_bLandmarkFind == false)
+	{
+		AfxMessageBox("측정을 위해 랜드마크가 필요합니다.");
+		return;
+	}
+
 	BeginWaitCursor();
 
 	switch (m_ScanPose)

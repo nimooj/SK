@@ -253,6 +253,7 @@ EgVertex *SK_Pose3_Left_Fist_Center(EgMesh *pMesh)
 
 /*
 *	\brief	왼쪽 팔꿈치아래점을 찾는 함수
+*	\note	마지막 수정일: 2020-11-29
 *
 *	\param	pMesh[in]	대상 메쉬에 대한 포인터
 *
@@ -260,38 +261,46 @@ EgVertex *SK_Pose3_Left_Fist_Center(EgMesh *pMesh)
 */
 EgVertex *SK_Pose3_Bottom_Olecranon(EgMesh *pMesh)
 {
-	for (int i = 0; i < 10; ++i)
-	{
-		double z = 0.7 + 0.3 * i / 9.0;
-		double Len = theSlicer.CvxSlice(pMesh, 2, z, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-		if (Len != -1.0)
-			break;
-	}
+	EgVertex *pSeedVert = theSizer.GetLandmark("왼쪽팔꿈치뒤점");
+	if (pSeedVert == NULL)
+		return NULL;
 
-	// 직선을 생성한다.
-	EgPos CntPos = theSlicer.GetCenterPos(0);
-	EgLine ray(CntPos, EgVec3(0.0, 0.0, -1.0));
-	EgPos SeedPt(0.0, 0.0, INFINITY);
-	for (EgFace *f : pMesh->m_pFaces)
-	{
-		EgPos p0 = f->GetVertexPos(0);
-		EgPos p1 = f->GetVertexPos(1);
-		EgPos p2 = f->GetVertexPos(2);
-		EgPos tmp;
-		if (::intersect_line_triangle(p0, p1, p2, ray, tmp, false))
-		{
-			if (tmp[2] < SeedPt[2])
-				SeedPt = tmp;
-		}
-	}
-
-	EgVertex *pSeedVert = FindClosestVert(pMesh, SeedPt);
-	pSeedVert = SK_Extreme_Vertex(pSeedVert, 30.0, 3, 2);
+	pSeedVert = SK_Extreme_Vertex(pSeedVert, 30.0, 3, 1);
 	return pSeedVert;
+	// 이전 버전
+	//for (int i = 0; i < 10; ++i)
+	//{
+	//	double z = 0.7 + 0.3 * i / 9.0;
+	//	double Len = theSlicer.CvxSlice(pMesh, 2, z, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+	//	if (Len != -1.0)
+	//		break;
+	//}
+
+	//// 직선을 생성한다.
+	//EgPos CntPos = theSlicer.GetCenterPos(0);
+	//EgLine ray(CntPos, EgVec3(0.0, 0.0, -1.0));
+	//EgPos SeedPt(0.0, 0.0, INFINITY);
+	//for (EgFace *f : pMesh->m_pFaces)
+	//{
+	//	EgPos p0 = f->GetVertexPos(0);
+	//	EgPos p1 = f->GetVertexPos(1);
+	//	EgPos p2 = f->GetVertexPos(2);
+	//	EgPos tmp;
+	//	if (::intersect_line_triangle(p0, p1, p2, ray, tmp, false))
+	//	{
+	//		if (tmp[2] < SeedPt[2])
+	//			SeedPt = tmp;
+	//	}
+	//}
+
+	//EgVertex *pSeedVert = FindClosestVert(pMesh, SeedPt);
+	//pSeedVert = SK_Extreme_Vertex(pSeedVert, 30.0, 3, 2);
+	//return pSeedVert;
 }
 
 /*
 *	\brief	왼쪽 팔꿈치뒤점을 찾는 함수
+*	\note	마지막 수정일: 2020-11-29
 *
 *	\param	pMesh[in]	대상 메쉬에 대한 포인터
 *
@@ -299,16 +308,30 @@ EgVertex *SK_Pose3_Bottom_Olecranon(EgMesh *pMesh)
 */
 EgVertex *SK_Pose3_Rear_Olecranon(EgMesh *pMesh)
 {
+	double minZ = 0.7, maxZ = 1.0, z_star;
+	double prevLen = INFINITY;
+	EgPos prevCntPos, CntPos;
 	for (int i = 0; i < 10; ++i)
 	{
-		double z = 0.7 + 0.3 * i / 9.0;
-		double Len = theSlicer.CvxSlice(pMesh, 2, z, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-		if (Len != -1.0)
+		double z = minZ + (maxZ - minZ) * (double)i / (9.0);
+		double len = theSlicer.CvxSlice(pMesh, 2, z, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+		if (len == -1.0)
+			continue;
+
+		if (len > prevLen)
+		{
+			z_star = z;
+			CntPos = theSlicer.GetCenterPos(0);
 			break;
+		}
+		else
+		{
+			prevLen = len;
+			prevCntPos = theSlicer.GetCenterPos(0);
+		}
 	}
 
 	// 직선을 생성한다.
-	EgPos CntPos = theSlicer.GetCenterPos(0);
 	EgLine ray(CntPos, EgVec3(0.0, 0.0, -1.0));
 	EgPos SeedPt(0.0, 0.0, INFINITY);
 	for (EgFace *f : pMesh->m_pFaces)
@@ -325,45 +348,10 @@ EgVertex *SK_Pose3_Rear_Olecranon(EgMesh *pMesh)
 	}
 
 	EgVertex *pSeedVert = FindClosestVert(pMesh, SeedPt);
-	pSeedVert = SK_Extreme_Vertex(pSeedVert, 30.0, 3, 2);
-	pSeedVert = SK_Extreme_Vertex(pSeedVert, 30.0, 5, 1);
+	pSeedVert = SK_Elliptic_Vertex(pSeedVert, 50.0);
+	pSeedVert = SK_Extreme_Vertex(pSeedVert, 20.0, 5);
 	return pSeedVert;
 }
-// 이전 버전
-//EgVertex *SK_Pose3_Rear_Olecranon(EgMesh *pMesh)
-//{
-//	for (int i = 0; i < 10; ++i)
-//	{
-//		double z = 0.7 + 0.3 * i / 9.0;
-//		double Len = theSlicer.CvxSlice(pMesh, 2, z, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-//		if (Len != -1.0)
-//			break;
-//	}
-//
-//	// 직선을 생성한다.
-//	EgPos CntPos = theSlicer.GetCenterPos(0);
-//	EgLine ray(CntPos, EgVec3(0.0, 0.0, -1.0));
-//	EgPos SeedPt(0.0, 0.0, INFINITY);
-//	EgFace *pSeedFace = NULL;
-//	for (EgFace *f : pMesh->m_pFaces)
-//	{
-//		EgPos p0 = f->GetVertexPos(0);
-//		EgPos p1 = f->GetVertexPos(1);
-//		EgPos p2 = f->GetVertexPos(2);
-//		EgPos tmp;
-//		if (::intersect_line_triangle(p0, p1, p2, ray, tmp, false))
-//		{
-//			if (tmp[2] < SeedPt[2])
-//			{
-//				SeedPt = tmp;
-//				pSeedFace = f;
-//			}
-//		}
-//	}
-//
-//	EgVertex *pSeedVert = pSeedFace->GetVertex(0);
-//	return pSeedVert;
-//}
 
 /*!
 *	\brief	오른쪽 등부위돌출점 찾는 함수
