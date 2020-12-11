@@ -923,6 +923,7 @@ EgMesh *SK_Import_Ply(CString FileName)
 	// 파일 헤더를 읽는다.
 	int NumVert = 0, NumFace = 0;
 	char buffer[1024];
+	bool bColor = false;
 	while (fscanf_s(fp, "%s", buffer, 1024) != EOF)
 	{
 		// element 태그라면,
@@ -939,6 +940,19 @@ EgMesh *SK_Import_Ply(CString FileName)
 			if (!strcmp(buffer, "face"))
 				fscanf_s(fp, "%d", &NumFace);
 		}
+
+		// property 태그라며,
+		if (!strcmp(buffer, "property"))
+		{
+			// 다음 태그를 읽는다.
+			fscanf_s(fp, "%s", buffer, 1024);
+			fscanf_s(fp, "%s", buffer, 1024);
+
+			// "red", "green", "blue" 태그라면,
+			if (!strcmp(buffer, "red") || !strcmp(buffer, "green") || !strcmp(buffer, "blue"))
+				bColor = true;
+		}
+
 		// end_header 태그라면
 		if (!strcmp(buffer, "end_header"))
 			break;
@@ -951,6 +965,14 @@ EgMesh *SK_Import_Ply(CString FileName)
 		fscanf_s(fp, "%lf%lf%lf", &x, &y, &z);
 		EgVertex *v = ::create_vertex(x, y, z);
 		pMesh->AddVertex(v);
+
+		// 칼라 정보가 있다면
+		if (bColor)
+		{
+			int r, g, b;
+			fscanf_s(fp, "%d%d%d", &r, &g, &b);
+			v->m_Color.Set((double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
+		}
 	}
 
 	// 삼각형의 인덱스를 읽는다.
@@ -976,7 +998,10 @@ EgMesh *SK_Import_Ply(CString FileName)
 	pMesh->UpdateNormal(SMOOTH);
 
 	// 텍스처 유무에 따라 쉐이딩 타입을 설정한다.
-	pMesh->m_ShadeType = SHADE_BY_LIGHT;
+	if (bColor)
+		pMesh->m_ShadeType = SHADE_BY_VERT_COLOR;
+	else
+		pMesh->m_ShadeType = SHADE_BY_LIGHT;
 	_cprintf("Importing PLY mesh complete...\n\n");
 
 	// 메쉬를 리턴한다.
@@ -1043,7 +1068,6 @@ EgMesh *SK_Import_Iv(CString FileName)
 			break;
 
 		int vidx0, vidx1, vidx2;
-		fgets(line_buffer, 1024, fp);
 		sscanf_s(line_buffer, "%d,%d,%d", &vidx0, &vidx1, &vidx2);
 
 		EgVertex *v0 = pMesh->GetVert(vidx0);

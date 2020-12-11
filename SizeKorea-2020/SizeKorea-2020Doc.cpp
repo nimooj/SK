@@ -2403,6 +2403,7 @@ void CSizeKorea2020Doc::InitVariable() {
 	theSlicer.Reset();
 }
 
+
 void CSizeKorea2020Doc::InitVariable_Landmark() {
 	if (m_Vertex) {
 		delete[] m_Vertex;
@@ -5342,6 +5343,7 @@ void CSizeKorea2020Doc::FindShouderMid() {
 // 참고점:  목옆점, 임시목앞점(Help11), 정중시상면, 젖가슴아래비만도
 void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 	if (m_BustCObesity < 0.57) {  //bmi 25일때  m_BustCObesity=0.602
+		_cprintf("fneck tmp : %f %f %f\n", m_LandMarkHelp[11].X, m_LandMarkHelp[11].Y, m_LandMarkHelp[11].Z);
 		m_LandMarkPose2[3] = m_LandMarkHelp[11];
 		return;
 	}
@@ -5718,7 +5720,7 @@ void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 		PathCrv.Eval(u1, v1);
 
 		p0 = GVector3f(v0[0], v0[1], v0[2]);
-		p1 = GVector3f(v0[0], v0[1], v0[2]);
+		p1 = GVector3f(v1[0], v1[1], v1[2]);
 
 		m_FNeckCrv.Insert(p0);
 		m_FNeckCrv.Insert(p1);
@@ -5738,6 +5740,7 @@ void CSizeKorea2020Doc::FindNeckFrontPointV1() {
 
 	//	m_LandMarkPose2[8] = FNv;
 
+	_cprintf("fneckCrv size : %d\n", fneckCurv.size());
 	GetView()->SetPoint(fneckCurv);
 
 	GObList<GVector3f> CrossPtList;
@@ -6316,7 +6319,6 @@ void CSizeKorea2020Doc::FindNeckFrontTemp1() {
 
 	m_LandMarkHelp[11] = FNeckPt; //temp FNeck
 	m_LandMarkPose2[3] = FNeckPt;
-
 
 	//Find Jaw point
 	pNode = m_SagittalPtsF.m_pLeftEnd;
@@ -12128,7 +12130,7 @@ void CSizeKorea2020Doc::OnFileOpen()
 		//m_bOpened = ::read_ply_asc(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
 		break;
 
-	case 4: // *.iv 파일
+	case 3: // *.iv 파일
 		if (m_ScanMesh = SK_Import_Iv(m_FileName))
 			m_bOpened = true;
 		else
@@ -12136,32 +12138,32 @@ void CSizeKorea2020Doc::OnFileOpen()
 		//m_bOpened = ::read_iv_asc(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
 		break;
 
-	case 5: // *.msh 파일
-		//m_ScanMesh = SK_Import_Msh(m_FileName);
-		//if (m_ScanMesh != NULL)
-		//	m_bOpened = true;
-		//else
-		//	m_bOpened = false;
-		m_bOpened = ::read_msh(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum);
-		break;
+		//case 5: // *.msh 파일
+			//m_ScanMesh = SK_Import_Msh(m_FileName);
+			//if (m_ScanMesh != NULL)
+			//	m_bOpened = true;
+			//else
+			//	m_bOpened = false;
+			//m_bOpened = ::read_msh(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum);
+			//break;
 
-	case 6: // *.vrml97 파일
-		//m_ScanMesh = SK_Import_Vrml97(m_FileName);
-		//if (m_ScanMesh != NULL)
-		//	m_bOpened = true;
-		//else
-		//	m_bOpened = false;
-		m_bOpened = ::read_vrml(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
-		break;
+		//case 6: // *.vrml97 파일
+			//m_ScanMesh = SK_Import_Vrml97(m_FileName);
+			//if (m_ScanMesh != NULL)
+			//	m_bOpened = true;
+			//else
+			//	m_bOpened = false;
+			//m_bOpened = ::read_vrml(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
+			//break;
 
-	case 7: // *.wrb 파일
-		//m_ScanMesh = SK_Import_Wrb(m_FileName);
-		//if (m_ScanMesh != NULL)
-		//	m_bOpened = true;
-		//else
-		//	m_bOpened = false;
-		m_bOpened = ::read_wrb(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
-		break;
+		//case 7: // *.wrb 파일
+			//m_ScanMesh = SK_Import_Wrb(m_FileName);
+			//if (m_ScanMesh != NULL)
+			//	m_bOpened = true;
+			//else
+			//	m_bOpened = false;
+			//m_bOpened = ::read_wrb(m_FileName, &m_Vertex, &m_Color, &m_Normal, &m_FaceIdx, &m_vNum, &m_iNum, &m_MaxY, &m_MinY, &m_MaxX, &m_MinX);
+			//break;
 	}
 	EndWaitCursor();
 
@@ -12177,7 +12179,7 @@ void CSizeKorea2020Doc::OnFileOpen()
 	}
 
 	// 모델 정점의 최소 좌표를 (0, 0, 0)으로 변환한다.
-	Arrange3DDataXYZ_to0();	
+	Arrange3DDataXYZ_to0();
 
 	// m_ScanMesh의 데이터를 m_Vertex, m_Color, m_Nomal...등에 복사한다.
 	EgMesh2RawData();

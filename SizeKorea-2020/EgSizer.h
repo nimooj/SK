@@ -33,6 +33,9 @@ public:
 	/*!	\biref	측정점 리스트 */
 	std::vector<EgVertex *>	m_Landmarks;
 
+	/*!	\biref	사용자 수동 지정 여부에 대한 변수 */
+	std::vector<bool>		m_bUserPick;  // 수동랜드마크
+
 	/*!	\biref	선택된 측정점 인덱스 */
 	int m_SltLandmarkIdx;
 

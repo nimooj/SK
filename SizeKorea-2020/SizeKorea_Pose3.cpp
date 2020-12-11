@@ -37,6 +37,9 @@ std::vector<std::string> ResultPose3 = {
 */
 EgVertex *SK_Pose3_Buttock_Protrusion(EgMesh *pMesh)
 {
+	// X축 중간 좌표를 구한다.
+	double cntX = pMesh->m_BndBox.m_MinPt[0] * 0.65 + pMesh->m_BndBox.m_MaxPt[0] * 0.35;
+
 	// Y축 최소/최대 좌표를 구한다.
 	double minY = pMesh->m_BndBox.m_MinPt[1];
 	double maxY = pMesh->m_BndBox.m_MaxPt[1];
@@ -52,7 +55,7 @@ EgVertex *SK_Pose3_Buttock_Protrusion(EgMesh *pMesh)
 	{
 		if (v->m_Pos[1] > low && v->m_Pos[1] < high)
 		{
-			if (v->m_Pos[2] < minZ)
+			if (v->m_Pos[2] < minZ && v->m_Pos[0] < cntX)
 			{
 				minZ = v->m_Pos[2];
 				pResult = v;
@@ -366,7 +369,7 @@ EgVertex *SK_Pose3_Right_Back_Protrusion(EgMesh *pMesh)
 	double Len = theSlicer.CvxSlice(pMesh, 2, 0.7, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
 	if (Len == -1.0)
 	{
-		printf("[Error]: SK_Pose5_Right_Back_Protrusion()...\n");
+		printf("[Error]: SK_Pose3_Right_Back_Protrusion()...\n");
 		return NULL;
 	}
 
@@ -374,8 +377,7 @@ EgVertex *SK_Pose3_Right_Back_Protrusion(EgMesh *pMesh)
 	EgLine ray(theSlicer.GetCenterPos(0), EgVec3(0.0, 0.0, -1.0));
 
 	// 직선과 메쉬의 교차점(최소 Z값을 갖는)을 구한다.
-	EgFace *pSeedFace = NULL;
-	double minZ = INFINITY;
+	EgPos SeedPt(0.0, 0.0, INFINITY);
 	for (EgFace *f : pMesh->m_pFaces)
 	{
 		EgPos p0 = f->GetVertexPos(0);
@@ -384,18 +386,14 @@ EgVertex *SK_Pose3_Right_Back_Protrusion(EgMesh *pMesh)
 		EgPos tmp; // 교차점
 		if (::intersect_line_triangle(p0, p1, p2, ray, tmp, false))
 		{
-			if (tmp[2] < minZ)
-			{
-				minZ = tmp[2];
-				pSeedFace = f;
-			}
+			if (tmp[2] < SeedPt[2])
+				SeedPt = tmp;
 		}
 	}
 
 	// 교차점 부근에서 최소 Z값을 갖는 정점을 찾는다.
-	EgVertex *pResult = pSeedFace->GetVertex(0);
-	pResult = SK_Extreme_Vertex(pResult, 100.0, 5, 2);
-	return pResult;
+	EgVertex *pResult = FindClosestVert(pMesh, SeedPt);
+	return SK_Extreme_Vertex(pResult, 100.0, 5);
 }
 
 /*!
@@ -435,7 +433,9 @@ EgVertex *SK_Pose3_Right_Acromion(EgMesh *pMesh)
 			Acromion = pt;
 
 	// 오른쪽 어깨점을 반환한다.
-	return FindClosestVert(pMesh, Acromion);
+	EgVertex *Ret = FindClosestVert(pMesh, Acromion);
+	return SK_Extreme_Vertex(Ret, 30.0, 5);
+	//return FindClosestVert(pMesh, Acromion);
 }
 // 이전 버전
 //EgVertex *SK_Pose3_Right_Acromion(EgMesh *pMesh)

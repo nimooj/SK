@@ -1088,8 +1088,6 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 	upper0.m_Coords[0] -= 10.0f;
 	upper1.m_Coords[0] += 10.0f;
 
-	_cprintf("upper Y : %f, lowerY : %f\n", upper0[1], lower[1]);
-
 	EgPlane pln(upper0, upper1, lower);
 	float maxDist = -INFINITY;
 	EgPos tmpFneckPt; 
@@ -1163,8 +1161,11 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 	P[4][0] = neckCtrl[3][0];	P[3][1] = neckCtrl[3][1];   P[3][2] = neckCtrl[3][2];   P[3][3] = 1.0f;
 	P[5][0] = neckCtrl[1][0];	P[1][1] = neckCtrl[1][1];   P[1][2] = neckCtrl[1][2];   P[1][3] = 1.0f;
 
+
 	GNurbsCrv PathCrv;
 	PathCrv.InterCrv(4, P, 5);
+
+	GetView()->SetPoint(neckCtrl);
 
 	// 곡선점들중에 임시 목앞점의 x위치와 가장 가까운 점을 구하여 mesh에 projection시켜 구한다
 	std::vector<EgPos> fneckCurv;
@@ -1179,16 +1180,17 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 		REAL u0 = min + ((max - min)*i) / (REAL)(snum);
 		REAL u1 = min + ((max - min)*(i + 1)) / (REAL)(snum);
 
+		// Barycentric (u) --> Coord (v)
 		PathCrv.Eval(u0, v0);
 		PathCrv.Eval(u1, v1);
 
 		p0 = GVector3f(v0[0], v0[1], v0[2]);
-		p1 = GVector3f(v0[0], v0[1], v0[2]);
+		p1 = GVector3f(v1[0], v1[1], v1[2]);
 
 		fneckCurv.push_back(EgPos(p0[0], p0[1],p0[2]));
 		fneckCurv.push_back(EgPos(p1[0], p1[1],p1[2]));
 
-		float dis = (tmpFneckPt[0] - v0[0])*(tmpFneckPt[0] - v1[0]);
+		float dis = (tmpFneckPt[0] - v0[0]) * (tmpFneckPt[0] - v1[0]);
 		if (dis < 0.0f) {
 			GVector3f a = p0 * 0.5f;
 			GVector3f b = p0 * 0.5f;
@@ -1198,7 +1200,10 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 		}
 	}
 
-	// GetView()->SetPoint(fneckCurv);
+	GetView()->SetPoint(fneckCurv);
+
+	// GetView()->SetPoint(EgPos(FNv.X, FNv.Y, FNv.Z));
+	// _cprintf("FNv : %f %f %f\n", FNv.X, FNv.Y, FNv.Z);
 
 	// GObList<GVector3f> CrossPtList;
 	std::vector<EgPos> CrossPtList;
@@ -1281,7 +1286,6 @@ void Pose1_FindFneckPt(EgMesh *pMesh) {
 		maxZ.m_Coords[0] = (m_MinX + m_MaxX) / 2;
 		FneckPt = FindClosestVert(pMesh, maxZ);
 	}
-
 
 	if (FneckPt != NULL) {
 		if (FneckPt->m_Pos[1] > tmpFneckPt.m_Coords[1]) {
